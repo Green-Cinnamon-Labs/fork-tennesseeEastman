@@ -1,19 +1,15 @@
-/* NOTAS:
-Aqui definimos a estrutura principal do modelo Tennessee Eastman, que inclui o estado do sistema,
-as entradas, as saídas e os parâmetros do modelo. A estrutura Plant encapsula todos esses componentes
-e fornece métodos para inicialização, atualização do estado com base nas entradas e obtenção das saídas.
-Esta implementação segue a abordagem descrita por Downs e Vogel (1993) no desenvolvimento do modelo Tennessee Eastman.
-*/
 
+use crate::dynamics::model::DynamicModel;
+use crate::method::euler::Euler;
 use crate::state::State;
-use crate::params::Params;
 
-pub struct Plant {
+pub struct Plant<M: DynamicModel> {
     pub state: State,
     pub inputs: Inputs,
     pub outputs: Outputs,
-    pub params: Params,
+    pub model: M,
 }
+
 
 impl Plant {
     
@@ -32,6 +28,7 @@ impl Plant {
         Self::from_state(state, params)
     }
 
+    // Construtor privado para evitar repetição de código
     fn from_state(state: State, params: Params) -> Self {
         Self {
             state,
@@ -41,11 +38,13 @@ impl Plant {
         }
     }
 
+
+    // 
     pub fn set_inputs(&mut self, inputs: Inputs) {
         self.inputs = inputs;
     }
 
     pub fn step(&mut self, dt: f64) {
-        integrator::step_euler(&mut self.state, &self.inputs, dt);
+        Euler::step(&self.model, &mut self.state.x, &self.inputs, dt);
     }
 }

@@ -1,6 +1,5 @@
-pub mod bus;
-pub mod plant;
-pub mod state;
-pub mod params;
 pub mod dynamics;
-pub mod initial_state;
+pub mod method;
+pub mod state;
+pub mod plant;
+pub mod params;
