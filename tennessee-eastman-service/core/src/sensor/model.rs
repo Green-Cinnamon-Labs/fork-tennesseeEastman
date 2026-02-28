@@ -1,3 +1,5 @@
+// sensor/model.rs
+
 pub trait Sensor {
     fn measure(&mut self, physical_value: f64, dt: f64) -> f64;
 }

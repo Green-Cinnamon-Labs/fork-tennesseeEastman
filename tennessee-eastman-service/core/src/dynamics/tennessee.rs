@@ -1,3 +1,8 @@
+use crate::dynamics::model::DynamicModel;
+use crate::state::State;
+use crate::bus::Inputs;
+use crate::params::Params;
+
 pub struct TennesseeEastmanModel {
     pub params: Params,
 }
@@ -5,13 +10,10 @@ pub struct TennesseeEastmanModel {
 impl DynamicModel for TennesseeEastmanModel {
     fn derivatives(
         &self,
-        state: &[f64],
+        state: &State,
         inputs: &Inputs,
-        dx: &mut [f64],
-    ) {
-        // placeholder temporário
-        for i in 0..state.len() {
-            dx[i] = 0.0;
-        }
+        params: &Params,
+    ) -> Vec<f64> {
+        vec![0.0; state.x.len()]
     }
 }

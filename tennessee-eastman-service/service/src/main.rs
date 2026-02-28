@@ -1,4 +1,7 @@
+// main.rs
+
 mod config;
+mod metadata;
 mod runtime;
 
 use config::Config;

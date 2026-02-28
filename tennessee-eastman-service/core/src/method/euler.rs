@@ -1,22 +1,21 @@
 use crate::dynamics::model::DynamicModel;
 use crate::state::State;
-use crate::inputs::Inputs;
+use crate::bus::Inputs;
+use crate::params::Params;
 
 pub struct Euler;
 
 impl Euler {
     pub fn step<M: DynamicModel>(
         model: &M,
-        state: &mut [f64],
+        state: &mut State,
         inputs: &Inputs,
+        params: &Params,
         dt: f64,
     ) {
-        let mut dx = vec![0.0; state.len()];
-
-        model.derivatives(state, inputs, &mut dx);
-
-        for i in 0..state.len() {
-            state[i] += dt * dx[i];
+        let dx = model.derivatives(state, inputs, params);
+        for i in 0..state.x.len() {
+            state.x[i] += dt * dx[i];
         }
     }
 }

@@ -3,3 +3,7 @@ pub mod method;
 pub mod state;
 pub mod plant;
 pub mod params;
+pub mod bus;
+pub mod actuator;
+pub mod sensor;
+pub mod initial_state;
