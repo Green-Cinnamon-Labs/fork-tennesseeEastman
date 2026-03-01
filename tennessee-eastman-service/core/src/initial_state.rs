@@ -10,51 +10,46 @@ pub struct InitialState {
 
 #[derive(Debug, Deserialize)]
 pub struct StateSections {
-    pub reactor: ReactorSection,
-    pub separator: SeparatorSection,
-    pub stripper: StripperSection,
-    pub compressor: CompressorSection,
-    pub analyzers: AnalyzerSection,
+    pub reactor_vapor:    Components,
+    pub reactor:          EnergySection,
+    pub separator_vapor:  Components,
+    pub separator:        EnergySection,
+    pub stripper_liquid:  Components,
+    pub stripper:         EnergySection,
+    pub compressor_vapor: Components,
+    pub compressor:       EnergySection,
+    pub cooling:          CoolingSection,
+    pub valves:           ValveSection,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ReactorSection {
-    pub vapor_holdup_kmol: Components,
-    pub liquid_holdup_kmol: Components,
+pub struct EnergySection {
     pub energy: f64,
-    pub pressure_kpa: f64,
-    pub liquid_volume_m3: f64,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct SeparatorSection {
-    pub vapor_holdup_kmol: Components,
-    pub liquid_holdup_kmol: Components,
-    pub energy: f64,
-    pub pressure_kpa: f64,
-    pub liquid_volume_m3: f64,
+pub struct CoolingSection {
+    pub reactor_water_temp:   f64,
+    pub separator_water_temp: f64,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct StripperSection {
-    pub liquid_holdup_kmol: Components,
-    pub energy: f64,
-    pub pressure_kpa: f64,
-    pub liquid_volume_m3: f64,
+pub struct ValveSection {
+    pub d_feed:                   f64,
+    pub e_feed:                   f64,
+    pub a_feed:                   f64,
+    pub a_c_feed:                 f64,
+    pub compressor_recycle_valve: f64,
+    pub purge_valve:              f64,
+    pub separator_underflow:      f64,
+    pub stripper_product:         f64,
+    pub stripper_steam_valve:     f64,
+    pub reactor_cooling_water:    f64,
+    pub condenser_cooling_water:  f64,
+    pub agitator_speed:           f64,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CompressorSection {
-    pub work_kw: f64,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AnalyzerSection {
-    pub reactor_feed_delay: f64,
-    pub purge_delay: f64,
-    pub product_delay: f64,
-}
-
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 pub struct Components {
     pub A: f64,
@@ -81,85 +76,65 @@ impl InitialState {
     }
 
     fn validate(&self) -> Result<(), String> {
-
-        // Exemplo de validações físicas básicas
-        if self.state.reactor.pressure_kpa <= 0.0 {
-            return Err("Reactor pressure must be > 0".into());
-        }
-
-        if self.state.separator.pressure_kpa <= 0.0 {
-            return Err("Separator pressure must be > 0".into());
-        }
-
-        if self.state.stripper.pressure_kpa <= 0.0 {
-            return Err("Stripper pressure must be > 0".into());
-        }
-
-        Ok(())
+        Ok(()) // validações físicas podem ser adicionadas depois
     }
-}
-
-impl InitialState {
-
+    
     pub fn flatten(&self) -> [f64; N_STATES] {
-
-        let mut x = [0.0; N_STATES];
+        let s = &self.state;
+        let mut x = [0.0f64; N_STATES];
         let mut i = 0;
 
-        // =========================
-        // REACTOR
-        // =========================
-        push_components(&mut x, &mut i, &self.state.reactor.vapor_holdup_kmol);
-        push_components(&mut x, &mut i, &self.state.reactor.liquid_holdup_kmol);
+        // YY(1-8): reactor vapor holdup
+        push_components(&mut x, &mut i, &s.reactor_vapor);
+        // YY(9): reactor energy
+        x[i] = s.reactor.energy; i += 1;
 
-        x[i] = self.state.reactor.energy; i+=1;
-        x[i] = self.state.reactor.pressure_kpa; i+=1;
-        x[i] = self.state.reactor.liquid_volume_m3; i+=1;
+        // YY(10-17): separator vapor holdup
+        push_components(&mut x, &mut i, &s.separator_vapor);
+        // YY(18): separator energy
+        x[i] = s.separator.energy; i += 1;
 
-        // =========================
-        // SEPARATOR
-        // =========================
-        push_components(&mut x, &mut i, &self.state.separator.vapor_holdup_kmol);
-        push_components(&mut x, &mut i, &self.state.separator.liquid_holdup_kmol);
+        // YY(19-26): stripper liquid holdup
+        push_components(&mut x, &mut i, &s.stripper_liquid);
+        // YY(27): stripper energy
+        x[i] = s.stripper.energy; i += 1;
 
-        x[i] = self.state.separator.energy; i+=1;
-        x[i] = self.state.separator.pressure_kpa; i+=1;
-        x[i] = self.state.separator.liquid_volume_m3; i+=1;
+        // YY(28-35): compressor vapor holdup
+        push_components(&mut x, &mut i, &s.compressor_vapor);
+        // YY(36): compressor energy
+        x[i] = s.compressor.energy; i += 1;
 
-        // =========================
-        // STRIPPER
-        // =========================
-        push_components(&mut x, &mut i, &self.state.stripper.liquid_holdup_kmol);
+        // YY(37-38): cooling water temperatures
+        x[i] = s.cooling.reactor_water_temp;   i += 1;
+        x[i] = s.cooling.separator_water_temp; i += 1;
 
-        x[i] = self.state.stripper.energy; i+=1;
-        x[i] = self.state.stripper.pressure_kpa; i+=1;
-        x[i] = self.state.stripper.liquid_volume_m3; i+=1;
+        // YY(39-50): valve positions
+        x[i] = s.valves.d_feed;                   i += 1;
+        x[i] = s.valves.e_feed;                   i += 1;
+        x[i] = s.valves.a_feed;                   i += 1;
+        x[i] = s.valves.a_c_feed;                 i += 1;
+        x[i] = s.valves.compressor_recycle_valve; i += 1;
+        x[i] = s.valves.purge_valve;              i += 1;
+        x[i] = s.valves.separator_underflow;      i += 1;
+        x[i] = s.valves.stripper_product;         i += 1;
+        x[i] = s.valves.stripper_steam_valve;     i += 1;
+        x[i] = s.valves.reactor_cooling_water;    i += 1;
+        x[i] = s.valves.condenser_cooling_water;  i += 1;
+        x[i] = s.valves.agitator_speed;           i += 1;
 
-        // =========================
-        // COMPRESSOR
-        // =========================
-        x[i] = self.state.compressor.work_kw; i+=1;
-
-        // =========================
-        // ANALYZERS
-        // =========================
-        x[i] = self.state.analyzers.reactor_feed_delay; i+=1;
-        x[i] = self.state.analyzers.purge_delay; i+=1;
-        x[i] = self.state.analyzers.product_delay; i+=1;
-
-        assert!(i == N_STATES, "Flatten não preencheu 50 estados.");
+        assert!(i == N_STATES, "flatten preencheu {} estados, esperado {}", i, N_STATES);
 
         x
     }
 }
 
 fn push_components(x: &mut [f64], i: &mut usize, c: &Components) {
-    x[*i] = c.A; *i+=1;
-    x[*i] = c.B; *i+=1;
-    x[*i] = c.C; *i+=1;
-    x[*i] = c.D; *i+=1;
-    x[*i] = c.E; *i+=1;
-    x[*i] = c.F; *i+=1;
-    x[*i] = c.G; *i+=1;
-    x[*i] = c.H; *i+=1;
+    x[*i] = c.A; *i += 1;
+    x[*i] = c.B; *i += 1;
+    x[*i] = c.C; *i += 1;
+    x[*i] = c.D; *i += 1;
+    x[*i] = c.E; *i += 1;
+    x[*i] = c.F; *i += 1;
+    x[*i] = c.G; *i += 1;
+    x[*i] = c.H; *i += 1;
 }

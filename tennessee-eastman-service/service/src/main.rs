@@ -11,7 +11,7 @@ fn main() {
     let config = Config {
         dt: 0.1,
         real_time: true,
-        initial_state_path: "te_mode1_initial_state.toml".into(),
+        initial_state_path: "cases/te_mode1_initial_state.toml".into(),
     };
 
     runtime::run(config);

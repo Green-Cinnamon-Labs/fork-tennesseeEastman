@@ -6,7 +6,7 @@
       "type": "lldb",
       "request": "launch",
       "program": "${workspaceFolder}/tennessee-eastman-service/service/target/debug/te_service",
-      "cwd": "${workspaceFolder}/tennessee-eastman-service/service",
+      "cwd": "${workspaceFolder}/tennessee-eastman-service",
       "preLaunchTask": "cargo build",
       "sourceLanguages": ["rust"]
     }
