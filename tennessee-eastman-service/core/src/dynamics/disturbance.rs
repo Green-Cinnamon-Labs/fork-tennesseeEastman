@@ -103,8 +103,7 @@ pub fn eval_disturbance(idx: usize, time: f64, state: &CubicDisturbanceState) ->
 pub fn update_segment(idx: usize, s: f64, sp: f64, state: &mut CubicDisturbanceState) {
     let h      = state.channels[idx].h_span * lcg_rand(-1, state) + state.channels[idx].h_zero;
     let active = state.channels[idx].active as f64;
-    let s1     = state.channels[idx].s_span  * lcg_rand(-1, state) * active
-               + state.channels[idx].s_zero;
+    let s1     = state.channels[idx].s_span  * lcg_rand(-1, state) * active + state.channels[idx].s_zero;
     let s1p    = state.channels[idx].sp_span * lcg_rand(-1, state) * active;
 
     let ch     = &mut state.channels[idx];
