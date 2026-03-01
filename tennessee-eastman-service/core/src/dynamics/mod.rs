@@ -1,3 +1,3 @@
 // dynamics/mod.rs
 pub mod model;
-pub mod tennessee;
+pub mod tep;
