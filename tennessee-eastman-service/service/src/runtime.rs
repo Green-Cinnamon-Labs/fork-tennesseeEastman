@@ -8,10 +8,16 @@ use crate::metadata::{MEASUREMENTS, MANIPULATED};
 use crate::resolver::resolve;
 
 pub fn run(config: Config) {
-    let resolved = resolve(&config.model, &config);
+    
+    let resolved = resolve(&config);
 
     let params = Params::default();
-    let mut plant = Plant::with_state_values(&resolved.initial_state, resolved.model, params);
+    let mut plant = Plant::with_state_values(
+        &resolved.initial_state,
+        resolved.model,
+        params,
+        resolved.integrator,
+    );
 
     loop {
         plant.step(config.dt);

@@ -1,13 +1,17 @@
+// core/src/method/euler.rs
+
 use crate::dynamics::model::DynamicModel;
 use crate::state::State;
 use crate::bus::Inputs;
 use crate::params::Params;
+use crate::method::integrator::Integrator;
 
 pub struct Euler;
 
-impl Euler {
-    pub fn step<M: DynamicModel>(
-        model: &M,
+impl Integrator for Euler {
+    fn step(
+        &self,
+        model: &dyn DynamicModel,
         state: &mut State,
         inputs: &Inputs,
         params: &Params,

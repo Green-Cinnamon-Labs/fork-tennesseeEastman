@@ -1,34 +1,35 @@
 
 
 use crate::dynamics::model::DynamicModel;
-use crate::method::euler::Euler;
+use crate::method::integrator::Integrator;
 use crate::state::State;
-use crate::bus::{Bus, Inputs, Outputs};
+use crate::bus::{Bus, Inputs};
 use crate::params::Params;
 
-pub struct Plant<M: DynamicModel> {
+pub struct Plant<M: DynamicModel, I: Integrator> {
     pub state: State,
     pub bus: Bus,
     pub model: M,
     pub params: Params,
+    pub integrator: I,
 }
 
-impl<M: DynamicModel> Plant<M> {
+impl<M: DynamicModel, I: Integrator> Plant<M, I> {
 
-    pub fn new(model: M, params: Params) -> Self {
+    pub fn new(model: M, params: Params, integrator: I) -> Self {
         let state = State::new(params.n_states);
-        Self::from_state(state, model, params)
+        Self::from_state(state, model, params, integrator)
     }
 
-    pub fn with_state_values(values: &[f64], model: M, params: Params) -> Self {
+    pub fn with_state_values(values: &[f64], model: M, params: Params, integrator: I) -> Self {
         let mut state = State::new(params.n_states);
         state.set(values);
-        Self::from_state(state, model, params)
+        Self::from_state(state, model, params, integrator)
     }
 
-    fn from_state(state: State, model: M, params: Params) -> Self {
+    fn from_state(state: State, model: M, params: Params, integrator: I) -> Self {
         let bus = Bus::new(&params);
-        Self { state, bus, model, params }
+        Self { state, bus, model, params, integrator }
     }
 
     pub fn set_inputs(&mut self, inputs: Inputs) {
@@ -36,6 +37,12 @@ impl<M: DynamicModel> Plant<M> {
     }
 
     pub fn step(&mut self, dt: f64) {
-        Euler::step(&self.model, &mut self.state, &self.bus.inputs, &self.params, dt);
+        self.integrator.step(
+            &self.model,
+            &mut self.state,
+            &self.bus.inputs,
+            &self.params,
+            dt,
+        );
     }
 }
