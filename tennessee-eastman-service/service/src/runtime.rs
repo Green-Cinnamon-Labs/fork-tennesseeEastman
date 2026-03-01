@@ -2,8 +2,8 @@
 
 use te_core::plant::Plant;
 use te_core::params::Params;
-use te_core::initial_state::InitialState;
-use te_core::dynamics::tennessee::TennesseeEastmanModel;
+use te_core::dynamics::tennessee::initial_state::InitialState;
+use te_core::dynamics::tennessee::model::TennesseeEastmanModel;
 
 use crate::config::Config;
 use crate::metadata::{MEASUREMENTS, MANIPULATED};

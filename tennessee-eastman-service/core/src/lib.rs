@@ -1,3 +1,4 @@
+// core/lib.rs
 pub mod dynamics;
 pub mod method;
 pub mod state;
@@ -6,4 +7,3 @@ pub mod params;
 pub mod bus;
 pub mod actuator;
 pub mod sensor;
-pub mod initial_state;
