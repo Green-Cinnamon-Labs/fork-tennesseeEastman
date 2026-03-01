@@ -2,20 +2,16 @@
 
 use te_core::plant::Plant;
 use te_core::params::Params;
-use te_core::dynamics::tennessee::initial_state::InitialState;
-use te_core::dynamics::tennessee::model::TennesseeEastmanModel;
 
 use crate::config::Config;
 use crate::metadata::{MEASUREMENTS, MANIPULATED};
+use crate::resolver::resolve;
 
 pub fn run(config: Config) {
-
-    let initial = InitialState::from_file(&config.initial_state_path).unwrap();
-    let flat = initial.flatten();
+    let resolved = resolve(&config.model, &config);
 
     let params = Params::default();
-    let model = TennesseeEastmanModel { params: params.clone() };
-    let mut plant = Plant::with_state_values(&flat, model, params);
+    let mut plant = Plant::with_state_values(&resolved.initial_state, resolved.model, params);
 
     loop {
         plant.step(config.dt);
