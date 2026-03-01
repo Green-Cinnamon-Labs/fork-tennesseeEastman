@@ -3,8 +3,11 @@
 use te_core::dynamics::model::DynamicModel;
 use te_core::dynamics::tennessee::model::TennesseeEastmanModel;
 use te_core::dynamics::tennessee::initial_state::InitialState;
+
 use te_core::method::integrator::Integrator;
 use te_core::method::euler::Euler;
+use te_core::method::rk4::RK4;
+
 use te_core::params::Params;
 
 use crate::config::{Config, ModelKind, IntegratorKind};
@@ -32,5 +35,6 @@ pub fn resolve(config: &Config) -> ResolvedPlant {
 fn resolve_integrator(kind: &IntegratorKind) -> Box<dyn Integrator> {
     match kind {
         IntegratorKind::Euler => Box::new(Euler),
+        IntegratorKind::RK4   => Box::new(RK4),
     }
 }

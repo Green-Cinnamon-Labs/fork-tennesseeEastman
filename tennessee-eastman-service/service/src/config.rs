@@ -4,6 +4,7 @@ pub enum ModelKind {
 
 pub enum IntegratorKind {
     Euler,
+    RK4
 }
 
 pub struct Config {

@@ -14,7 +14,7 @@ fn main() {
         real_time: true,
         initial_state_path: "cases/te_mode1_initial_state.toml".into(),
         model: ModelKind::TennesseeEastman,
-        integrator: IntegratorKind::Euler,
+        integrator: IntegratorKind::RK4,
     };
 
     runtime::run(config);
