@@ -38,10 +38,8 @@ impl<M: DynamicModel, I: Integrator> Plant<M, I> {
 
     pub fn step(&mut self, dt: f64) {
         self.integrator.step(
-            &self.model,
+            &mut self.model,
             &mut self.state,
-            &self.bus.inputs,
-            &self.params,
             dt,
         );
     }

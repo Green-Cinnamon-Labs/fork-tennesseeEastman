@@ -2,16 +2,12 @@
 
 use crate::dynamics::model::DynamicModel;
 use crate::state::State;
-use crate::bus::Inputs;
-use crate::params::Params;
 
 pub trait Integrator {
     fn step(
         &self,
-        model: &dyn DynamicModel,
+        model: &mut dyn DynamicModel,
         state: &mut State,
-        inputs: &Inputs,
-        params: &Params,
         dt: f64,
     );
 }
@@ -19,12 +15,10 @@ pub trait Integrator {
 impl Integrator for Box<dyn Integrator> {
     fn step(
         &self,
-        model: &dyn DynamicModel,
+        model: &mut dyn DynamicModel,
         state: &mut State,
-        inputs: &Inputs,
-        params: &Params,
         dt: f64,
     ) {
-        self.as_ref().step(model, state, inputs, params, dt);
+        self.as_ref().step(model, state, dt);
     }
 }

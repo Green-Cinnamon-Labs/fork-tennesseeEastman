@@ -8,8 +8,6 @@ use te_core::method::integrator::Integrator;
 use te_core::method::euler::Euler;
 use te_core::method::rk4::RK4;
 
-use te_core::params::Params;
-
 use crate::config::{Config, ModelKind, IntegratorKind};
 
 pub struct ResolvedPlant {
@@ -23,10 +21,9 @@ pub fn resolve(config: &Config) -> ResolvedPlant {
 
     match &config.model {
         ModelKind::TennesseeEastman => {
-            let params = Params::default();
             let initial = InitialState::from_file(&config.initial_state_path).unwrap();
             let flat = initial.flatten().to_vec();
-            let model = Box::new(TennesseeEastmanModel { params });
+            let model: Box<TennesseeEastmanModel> = Box::new(TennesseeEastmanModel::new());
             ResolvedPlant { model, integrator, initial_state: flat }
         }
     }
