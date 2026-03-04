@@ -23,7 +23,7 @@ pub fn resolve(config: &Config) -> ResolvedPlant {
         ModelKind::TennesseeEastman => {
             let initial = InitialState::from_file(&config.initial_state_path).unwrap();
             let flat = initial.flatten().to_vec();
-            let model: Box<TennesseeEastmanModel> = Box::new(TennesseeEastmanModel::new());
+            let model = Box::new(TennesseeEastmanModel::new(&initial));
             ResolvedPlant { model, integrator, initial_state: flat }
         }
     }
