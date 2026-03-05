@@ -130,6 +130,11 @@ impl TennesseeEastmanModel {
 }
 
 impl DynamicModel for TennesseeEastmanModel {
+    
+    fn measurements(&self) -> &[f64] {
+        self.xmeas()
+    }
+
     fn derivatives(&mut self, state: &State) -> Vec<f64> {
         let yy = &state.x;
         let c  = &self.constants;
@@ -166,10 +171,8 @@ impl DynamicModel for TennesseeEastmanModel {
         for i in 0..9 {
             if time >= ds.channels[i].t_next {
                 let hw = ds.channels[i].t_next - ds.channels[i].t_last;
-                let sw   = ds.channels[i].a + hw * (ds.channels[i].b
-                         + hw * (ds.channels[i].c + hw * ds.channels[i].d));
-                let spw  = ds.channels[i].b + hw * (2.0 * ds.channels[i].c
-                         + 3.0 * hw * ds.channels[i].d);
+                let sw   = ds.channels[i].a + hw * (ds.channels[i].b + hw * (ds.channels[i].c + hw * ds.channels[i].d));
+                let spw  = ds.channels[i].b + hw * (2.0 * ds.channels[i].c + 3.0 * hw * ds.channels[i].d);
                 ds.channels[i].t_last = ds.channels[i].t_next;
                 update_segment(i, sw, spw, ds);
             }
@@ -181,10 +184,8 @@ impl DynamicModel for TennesseeEastmanModel {
         for i in 9..12 {
             if time >= ds.channels[i].t_next {
                 let hw = ds.channels[i].t_next - ds.channels[i].t_last;
-                let sw  = ds.channels[i].a + hw * (ds.channels[i].b
-                        + hw * (ds.channels[i].c + hw * ds.channels[i].d));
-                let spw = ds.channels[i].b + hw * (2.0 * ds.channels[i].c
-                        + 3.0 * hw * ds.channels[i].d);
+                let sw  = ds.channels[i].a + hw * (ds.channels[i].b + hw * (ds.channels[i].c + hw * ds.channels[i].d));
+                let spw = ds.channels[i].b + hw * (2.0 * ds.channels[i].c + 3.0 * hw * ds.channels[i].d);
                 ds.channels[i].t_last = ds.channels[i].t_next;
                 if sw > 0.1 {
                     ds.channels[i].a = sw;
@@ -221,11 +222,8 @@ impl DynamicModel for TennesseeEastmanModel {
         // --------------------------------------------------------
         // Block 12: update feed compositions and temperatures
         // --------------------------------------------------------
-        self.xst[0][3] = eval_disturbance(0, time, ds)
-            - idv[0] as f64 * 0.03
-            - idv[1] as f64 * 2.43719e-3;
-        self.xst[1][3] = eval_disturbance(1, time, ds)
-            + idv[1] as f64 * 0.005;
+        self.xst[0][3] = eval_disturbance(0, time, ds) - idv[0] as f64 * 0.03 - idv[1] as f64 * 2.43719e-3;
+        self.xst[1][3] = eval_disturbance(1, time, ds) + idv[1] as f64 * 0.005;
         self.xst[2][3] = 1.0 - self.xst[0][3] - self.xst[1][3];
 
         self.tst[0]  = eval_disturbance(2, time, ds) + idv[2] as f64 * 5.0;
@@ -356,6 +354,9 @@ impl DynamicModel for TennesseeEastmanModel {
         }
 
         let ptv = utvv * RG * tkv / VTV;
+
+
+
 
         // --------------------------------------------------------
         // Block 17: reaction kinetics (Arrhenius)
@@ -502,8 +503,7 @@ impl DynamicModel for TennesseeEastmanModel {
         let flcoef = CPFLMX / 1.197;
         let mut flms = CPFLMX + flcoef * (1.0 - pr.powi(3));
 
-        let cpdh = flms * (tcs + 273.15) * 1.8e-6 * 1.9872
-                 * (ptv - pts) / (xmws[8] * pts);
+        let cpdh = flms * (tcs + 273.15) * 1.8e-6 * 1.9872 * (ptv - pts) / (xmws[8] * pts);
 
         let dlp = (ptv - pts).max(0.0);
         flms -= vpos[4] * 53.349 * dlp.sqrt();

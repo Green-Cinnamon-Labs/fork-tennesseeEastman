@@ -37,10 +37,11 @@ impl<M: DynamicModel, I: Integrator> Plant<M, I> {
     }
 
     pub fn step(&mut self, dt: f64) {
-        self.integrator.step(
-            &mut self.model,
-            &mut self.state,
-            dt,
-        );
+        self.integrator.step(&mut self.model, &mut self.state, dt);
+        let measurements = self.model.measurements().to_vec();
+        self.bus.outputs.xmeas
+            .iter_mut()
+            .zip(measurements.iter())
+            .for_each(|(out, val)| *out = *val);
     }
 }
