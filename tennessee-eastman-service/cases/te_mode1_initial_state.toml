@@ -18,7 +18,7 @@ H = 159.1865960
 
 # YY(9): ETR — Energia do reator
 [state.reactor]
-energy = 2.808522723
+energy = 2808.522723
 
 # ============================================================
 # YY(10-17): UCVS — Vapor holdup do separador (kmol)
@@ -35,7 +35,7 @@ H = 41.20394008
 
 # YY(18): ETS — Energia do separador
 [state.separator]
-energy = 0.5699317760
+energy = 569.9317760
 
 
 # ============================================================
@@ -53,7 +53,7 @@ H = 39.38459028
 
 # YY(27): ETC — Energia do stripper
 [state.stripper]
-energy = 0.3755297257
+energy = 375.5297257
 
 
 # ============================================================
@@ -71,7 +71,7 @@ H = 5.555448243
 
 # YY(36): ETV — Energia do vaso
 [state.compressor]
-energy = 0.9218489762
+energy = 921.8489762
 
 
 # YY(37-38): Temperaturas de água de resfriamento
