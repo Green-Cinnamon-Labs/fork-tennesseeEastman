@@ -44,14 +44,14 @@ pub struct VarMeta {
 
 pub const MEASUREMENTS: &[VarMeta] = &[
     VarMeta {
-        index: 9,
+        index: 8,
         name: "Reactor temperature",
         tag: "XMEAS(9)",
         unit: "°C",
         kind: VarKind::Measurement,
     },
     VarMeta {
-        index: 7,
+        index: 6,
         name: "Reactor pressure",
         tag: "XMEAS(7)",
         unit: "kPa",
@@ -61,7 +61,7 @@ pub const MEASUREMENTS: &[VarMeta] = &[
 
 pub const MANIPULATED: &[VarMeta] = &[
     VarMeta {
-        index: 9,
+        index: 8,
         name: "Stripper steam valve",
         tag: "XMV(9)",
         unit: "%",
