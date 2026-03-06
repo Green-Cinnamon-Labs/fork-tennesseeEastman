@@ -11,6 +11,9 @@ impl DynamicModel for Box<dyn DynamicModel> {
     fn derivatives(&mut self, state: &State) -> Vec<f64> {
         self.as_mut().derivatives(state)
     }
+    fn measurements(&self) -> &[f64] {
+        self.as_ref().measurements()
+    }
 }
 
 
