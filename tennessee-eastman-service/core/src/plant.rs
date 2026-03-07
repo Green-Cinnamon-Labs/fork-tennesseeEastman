@@ -28,7 +28,9 @@ impl<M: DynamicModel, I: Integrator> Plant<M, I> {
     }
 
     fn from_state(state: State, model: M, params: Params, integrator: I) -> Self {
-        let bus = Bus::new(&params);
+        let mut bus = Bus::new(&params);
+        let initial_mv = model.get_mv();
+        bus.inputs.mv.iter_mut().zip(initial_mv.iter()).for_each(|(b, v)| *b = *v);
         Self { state, bus, model, params, integrator }
     }
 
@@ -37,7 +39,9 @@ impl<M: DynamicModel, I: Integrator> Plant<M, I> {
     }
 
     pub fn step(&mut self, dt: f64) {
+        self.model.set_inputs(&self.bus.inputs.mv, &self.bus.inputs.dv);
         self.integrator.step(&mut self.model, &mut self.state, dt);
+        self.model.advance_time(dt);
         let measurements = self.model.measurements().to_vec();
         self.bus.outputs.xmeas
             .iter_mut()

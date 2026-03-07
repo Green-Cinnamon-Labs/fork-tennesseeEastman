@@ -1,12 +1,12 @@
 // core/src/dynamics/tep/model.rs
 
+use crate::state::State;
 use crate::dynamics::model::DynamicModel;
 use crate::dynamics::tep::constants::TepConstants;
+use crate::dynamics::tep::initial_state::InitialState;
 use crate::dynamics::tep::disturbance_state::TepDisturbanceState;
 use crate::dynamics::disturbance::{eval_disturbance, update_segment, white_noise};
-use crate::dynamics::tep::initial_state::InitialState;
 use crate::dynamics::thermo::{mixture_enthalpy, temperature_from_enthalpy, liquid_density};
-use crate::state::State;
 
 // Volume constants from TEINIT (teprob.f)
 const VTR: f64 = 1300.0;   // reactor total volume
@@ -130,9 +130,23 @@ impl TennesseeEastmanModel {
 }
 
 impl DynamicModel for TennesseeEastmanModel {
-    
+
     fn measurements(&self) -> &[f64] {
         self.xmeas()
+    }
+
+    fn get_mv(&self) -> Vec<f64> {
+        self.xmv.to_vec()
+    }
+
+    fn set_inputs(&mut self, mv: &[f64], _dv: &[f64]) {
+        for (i, &v) in mv.iter().enumerate().take(12) {
+            self.xmv[i] = v;
+        }
+    }
+
+    fn advance_time(&mut self, dt: f64) {
+        self.time += dt;
     }
 
     fn derivatives(&mut self, state: &State) -> Vec<f64> {
