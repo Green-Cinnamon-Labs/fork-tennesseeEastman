@@ -1,12 +1,10 @@
 // core/src/dynamics/tennessee/constants.rs
 
-/// Constantes físico-químicas do Tennessee Eastman Process
-///
-/// Equivalente ao bloco COMMON /CONST/ do FORTRAN.
-/// Todos os valores são extraídos diretamente do TEINIT em teprob.f
-/// e nunca mudam durante a simulação.
-///
-/// Indexação: componentes A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7
+/** Constantes físico-químicas do Tennessee Eastman Process
+Equivalente ao bloco COMMON /CONST/ do FORTRAN.
+Todos os valores são extraídos diretamente do TEINIT em teprob.f e nunca mudam durante a simulação.
+Indexação: componentes A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7
+*/
 pub struct TepConstants {
     /// Massas molares [g/mol]
     pub xmw: [f64; 8],

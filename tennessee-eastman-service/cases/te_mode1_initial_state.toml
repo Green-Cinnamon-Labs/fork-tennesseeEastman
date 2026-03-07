@@ -18,7 +18,7 @@ H = 159.1865960
 
 # YY(9): ETR — Energia do reator
 [state.reactor]
-energy = 2808.522723
+energy = 2.808522723
 
 # ============================================================
 # YY(10-17): UCVS — Vapor holdup do separador (kmol)

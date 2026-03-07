@@ -751,8 +751,7 @@ impl DynamicModel for TennesseeEastmanModel {
             // Stripper
             yp[i + 18] = fcm[i][11] - fcm[i][12];
             // Compressor/VV
-            yp[i + 27] = fcm[i][0] + fcm[i][1] + fcm[i][2]
-                        + fcm[i][4] + fcm[i][8] - fcm[i][5];
+            yp[i + 27] = fcm[i][0] + fcm[i][1] + fcm[i][2] + fcm[i][4] + fcm[i][8] - fcm[i][5];
         }
 
         // Energy balances
