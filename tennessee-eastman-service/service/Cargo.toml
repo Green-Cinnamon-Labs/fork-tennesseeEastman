@@ -8,4 +8,6 @@ edition = "2021"
 
 [dependencies]
 te_core = { path = "../core" }
+ratatui   = "0.28"
+crossterm = "0.28"
 

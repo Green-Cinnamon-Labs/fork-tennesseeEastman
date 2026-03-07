@@ -4,7 +4,7 @@ use te_core::plant::Plant;
 use te_core::params::Params;
 
 use crate::config::Config;
-use crate::metadata::{MEASUREMENTS, MANIPULATED};
+use crate::dashboard::Dashboard;
 use crate::resolver::resolve;
 
 pub fn run(config: Config) {
@@ -18,18 +18,22 @@ pub fn run(config: Config) {
         resolved.integrator,
     );
 
+    let mut dashboard = Dashboard::new().expect("Failed to initialize terminal dashboard");
+
     loop {
         plant.step(config.dt);
         plant.bus.time += config.dt;
 
-        for meta in MEASUREMENTS {
-            let value = plant.bus.outputs.xmeas[meta.index];
-            println!("[{}] {} = {:.4} {}", meta.tag, meta.name, value, meta.unit);
-        }
+        let running = dashboard
+            .render(
+                plant.bus.time,
+                &plant.bus.outputs.xmeas,
+                &plant.bus.inputs.mv,
+            )
+            .expect("Failed to render dashboard");
 
-        for meta in MANIPULATED {
-            let value = plant.bus.inputs.mv[meta.index];
-            println!("[{}] {} = {:.2} {}", meta.tag, meta.name, value, meta.unit);
+        if !running {
+            break;
         }
 
         if config.real_time {
