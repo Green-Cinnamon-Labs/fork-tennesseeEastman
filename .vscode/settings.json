@@ -6,5 +6,6 @@
             "packageManager": "ms-python.python:pip"
         }
     ],
-    "fortran.fortls.disabled": true
+    "fortran.fortls.disabled": true,
+    "lldb.evaluateForHovers": false
 }
