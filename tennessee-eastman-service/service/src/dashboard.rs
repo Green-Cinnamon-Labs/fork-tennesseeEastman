@@ -13,6 +13,7 @@ use ratatui::{
     Terminal,
 };
 use std::io;
+use te_core::snapshot::SimulationSnapshot;
 
 // (index 0-based, tag, name, unit)
 const XMEAS_META: &[(usize, &str, &str, &str)] = &[
@@ -70,7 +71,7 @@ impl Dashboard {
     }
 
     /// Renders one frame. Returns false when the user presses q or Ctrl+C.
-    pub fn render(&mut self, sim_time: f64, xmeas: &[f64], xmv: &[f64]) -> io::Result<bool> {
+    pub fn render(&mut self, snap: &SimulationSnapshot) -> io::Result<bool> {
         if event::poll(std::time::Duration::from_millis(0))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
@@ -97,7 +98,7 @@ impl Dashboard {
             let header = Block::default()
                 .title(format!(
                     " Tennessee Eastman Process  ·  t = {:.2} s  ·  [q] quit ",
-                    sim_time
+                    snap.time
                 ))
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::Cyan));
@@ -117,7 +118,7 @@ impl Dashboard {
             let xmeas_rows: Vec<Row> = XMEAS_META
                 .iter()
                 .map(|(idx, tag, name, unit)| {
-                    let val = xmeas.get(*idx).copied().unwrap_or(f64::NAN);
+                    let val = snap.xmeas.get(*idx).copied().unwrap_or(f64::NAN);
                     Row::new(vec![
                         Cell::from(*tag).style(Style::default().fg(Color::Yellow)),
                         Cell::from(format!("{:>10.3}", val)),
@@ -150,7 +151,7 @@ impl Dashboard {
             let xmv_rows: Vec<Row> = XMV_META
                 .iter()
                 .map(|(idx, tag, name, unit)| {
-                    let val = xmv.get(*idx).copied().unwrap_or(f64::NAN);
+                    let val = snap.xmv.get(*idx).copied().unwrap_or(f64::NAN);
                     Row::new(vec![
                         Cell::from(*tag).style(Style::default().fg(Color::Green)),
                         Cell::from(format!("{:>7.2}", val)),

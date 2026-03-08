@@ -24,13 +24,8 @@ pub fn run(config: Config) {
         plant.step(config.dt);
         plant.bus.time += config.dt;
 
-        let running = dashboard
-            .render(
-                plant.bus.time,
-                &plant.bus.outputs.xmeas,
-                &plant.bus.inputs.mv,
-            )
-            .expect("Failed to render dashboard");
+        let snap = plant.snapshot();
+        let running = dashboard.render(&snap).expect("Failed to render dashboard");
 
         if !running {
             break;

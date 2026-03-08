@@ -5,6 +5,7 @@ use crate::method::integrator::Integrator;
 use crate::state::State;
 use crate::bus::{Bus, Inputs};
 use crate::params::Params;
+use crate::snapshot::SimulationSnapshot;
 
 pub struct Plant<M: DynamicModel, I: Integrator> {
     pub state: State,
@@ -36,6 +37,16 @@ impl<M: DynamicModel, I: Integrator> Plant<M, I> {
 
     pub fn set_inputs(&mut self, inputs: Inputs) {
         self.bus.inputs = inputs;
+    }
+
+    pub fn snapshot(&self) -> SimulationSnapshot {
+        SimulationSnapshot {
+            time:  self.bus.time,
+            xmeas: self.bus.outputs.xmeas.clone(),
+            xmv:   self.bus.inputs.mv.clone(),
+            dv:    self.bus.inputs.dv.clone(),
+            state: self.state.x.clone(),
+        }
     }
 
     pub fn step(&mut self, dt: f64) {
