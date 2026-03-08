@@ -18,6 +18,12 @@ pub fn run(config: Config) {
         resolved.integrator,
     );
 
+    for &idv in &config.active_idv {
+        if idv >= 1 && idv <= plant.bus.inputs.dv.len() {
+            plant.bus.inputs.dv[idv - 1] = 1.0;
+        }
+    }
+
     let mut dashboard = Dashboard::new().expect("Failed to initialize terminal dashboard");
 
     loop {

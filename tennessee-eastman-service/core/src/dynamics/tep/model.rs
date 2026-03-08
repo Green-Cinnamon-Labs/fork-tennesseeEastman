@@ -140,9 +140,12 @@ impl DynamicModel for TennesseeEastmanModel {
         self.xmv.to_vec()
     }
 
-    fn set_inputs(&mut self, mv: &[f64], _dv: &[f64]) {
+    fn set_inputs(&mut self, mv: &[f64], dv: &[f64]) {
         for (i, &v) in mv.iter().enumerate().take(12) {
             self.xmv[i] = v;
+        }
+        for (i, &v) in dv.iter().enumerate().take(20) {
+            self.idv[i] = if v != 0.0 { 1 } else { 0 };
         }
     }
 
