@@ -2,6 +2,7 @@
 
 use crate::state::State;
 use crate::dynamics::model::DynamicModel;
+use crate::snapshot::Alarm;
 use crate::dynamics::tep::constants::TepConstants;
 use crate::dynamics::tep::initial_state::InitialState;
 use crate::dynamics::tep::disturbance_state::TepDisturbanceState;
@@ -147,6 +148,20 @@ impl DynamicModel for TennesseeEastmanModel {
 
     fn advance_time(&mut self, dt: f64) {
         self.time += dt;
+    }
+
+    fn alarms(&self) -> Vec<Alarm> {
+        let x = &self.xmeas;
+        vec![
+            Alarm { name: "Reactor P high (>3000 kPa)",  active: x[6]  > 3000.0 },
+            Alarm { name: "Reactor T high (>175 °C)",    active: x[8]  > 175.0  },
+            Alarm { name: "Reactor Lv high (>90%)",      active: x[7]  > 90.0   },
+            Alarm { name: "Reactor Lv low (<10%)",       active: x[7]  < 10.0   },
+            Alarm { name: "Sep Lv high (>90%)",          active: x[11] > 90.0   },
+            Alarm { name: "Sep Lv low (<10%)",           active: x[11] < 10.0   },
+            Alarm { name: "Stripper Lv high (>90%)",     active: x[14] > 90.0   },
+            Alarm { name: "Stripper Lv low (<10%)",      active: x[14] < 10.0   },
+        ]
     }
 
     fn derivatives(&mut self, state: &State) -> Vec<f64> {

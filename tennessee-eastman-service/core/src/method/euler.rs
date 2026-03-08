@@ -7,6 +7,8 @@ use crate::method::integrator::Integrator;
 pub struct Euler;
 
 impl Integrator for Euler {
+    fn name(&self) -> &'static str { "Euler" }
+
     fn step(
         &self,
         model: &mut dyn DynamicModel,

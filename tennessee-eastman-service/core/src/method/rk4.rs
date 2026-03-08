@@ -7,6 +7,8 @@ use crate::method::integrator::Integrator;
 pub struct RK4;
 
 impl Integrator for RK4 {
+    fn name(&self) -> &'static str { "RK4" }
+
     fn step(
         &self,
         model: &mut dyn DynamicModel,

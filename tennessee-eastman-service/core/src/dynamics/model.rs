@@ -1,6 +1,7 @@
 // core/src/dynamics/model.rs
 
 use crate::state::State;
+use crate::snapshot::Alarm;
 
 pub trait DynamicModel {
     fn derivatives(&mut self, state: &State) -> Vec<f64>;
@@ -8,6 +9,7 @@ pub trait DynamicModel {
     fn get_mv(&self) -> Vec<f64> { vec![] }
     fn set_inputs(&mut self, mv: &[f64], dv: &[f64]) { let _ = (mv, dv); }
     fn advance_time(&mut self, dt: f64) { let _ = dt; }
+    fn alarms(&self) -> Vec<Alarm> { vec![] }
 }
 
 impl DynamicModel for Box<dyn DynamicModel> {
@@ -25,6 +27,9 @@ impl DynamicModel for Box<dyn DynamicModel> {
     }
     fn advance_time(&mut self, dt: f64) {
         self.as_mut().advance_time(dt)
+    }
+    fn alarms(&self) -> Vec<Alarm> {
+        self.as_ref().alarms()
     }
 }
 
