@@ -35,7 +35,7 @@ H = 41.20394008
 
 # YY(18): ETS — Energia do separador
 [state.separator]
-energy = 569.9317760
+energy = 0.5699317760   # FORTRAN value /1000 — AH constants in Rust are 1e-6 scale, not 1e-3
 
 
 # ============================================================
@@ -53,7 +53,7 @@ H = 39.38459028
 
 # YY(27): ETC — Energia do stripper
 [state.stripper]
-energy = 375.5297257
+energy = 0.3755297257   # FORTRAN value /1000
 
 
 # ============================================================
@@ -71,7 +71,7 @@ H = 5.555448243
 
 # YY(36): ETV — Energia do vaso
 [state.compressor]
-energy = 921.8489762
+energy = 0.9218489762   # FORTRAN value /1000
 
 
 # YY(37-38): Temperaturas de água de resfriamento

@@ -507,8 +507,6 @@ impl DynamicModel for TennesseeEastmanModel {
         ftm[12] = vpos[7] * VRNG[7] / 100.0;
 
         let uac = vpos[8] * VRNG[8] * (1.0 + eval_disturbance(8, time, ds)) / 100.0;
-        let fwr = vpos[9]  * VRNG[9]  / 100.0;
-        let fws = vpos[10] * VRNG[10] / 100.0;
         let agsp = (vpos[11] + 150.0) / 100.0;
 
         // --------------------------------------------------------
@@ -780,9 +778,9 @@ impl DynamicModel for TennesseeEastmanModel {
                + hst[2] * ftm[2] + hst[4] * ftm[4]
                + hst[8] * ftm[8] - hst[5] * ftm[5];
 
-        // Cooling water temperatures
-        yp[36] = (fwr * (self.tcwr - twr) - qur / 500.7) / 1.0; // simplified
-        yp[37] = (fws * (self.tcws - tws) - qus / 500.7) / 1.0;
+        // Cooling water temperatures: kept constant (YP(37)/YP(38) never set in FORTRAN TEFUNC)
+        yp[36] = 0.0;
+        yp[37] = 0.0;
 
         // Valve dynamics: dVPOS/dt = (XMV - VPOS) / VTAU
         for i in 0..12 {
