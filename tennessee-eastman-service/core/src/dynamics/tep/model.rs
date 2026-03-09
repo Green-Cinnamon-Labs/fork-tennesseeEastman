@@ -267,8 +267,6 @@ impl DynamicModel for TennesseeEastmanModel {
 
         let r1f = self.r1f;
         let r2f = self.r2f;
-        let tcwr = self.tcwr;
-        let tcws = self.tcws;
 
         // --------------------------------------------------------
         // Block 13: unpack state vector YY into process variables
