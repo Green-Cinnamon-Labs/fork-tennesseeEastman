@@ -2,7 +2,6 @@
 
 mod config;
 mod dashboard;
-mod metadata;
 mod resolver;
 mod runtime;
 
