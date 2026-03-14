@@ -67,6 +67,12 @@ impl Dashboard {
         execute!(stdout, EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend)?;
+        // Drain any bytes buffered in stdin before raw mode was enabled
+        // (terminal initialization sequences sent by the shell/IDE on session start
+        // can be misread as keypresses — e.g. causing an immediate 'q' quit).
+        while event::poll(std::time::Duration::from_millis(0))? {
+            let _ = event::read()?;
+        }
         Ok(Self { terminal })
     }
 
