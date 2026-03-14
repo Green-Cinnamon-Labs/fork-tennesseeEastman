@@ -21,4 +21,9 @@ pub struct Config {
     /// IDV channels to activate at startup (1-based, e.g. vec![4] activates IDV 4).
     /// Disturbances are held off during the ramp and enabled when it completes.
     pub active_idv: Vec<usize>,
+    /// Stop simulation after this many simulated hours. None = run until user quits or ISD.
+    pub max_sim_time_h: Option<f64>,
+    /// If set, write the final plant state as a TOML snapshot to this path when the
+    /// simulation exits cleanly (time limit or user quit, not ISD shutdown).
+    pub snapshot_path: Option<String>,
 }

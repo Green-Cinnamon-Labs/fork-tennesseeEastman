@@ -128,7 +128,7 @@ fn render_header(f: &mut Frame, area: Rect, snap: &SimulationSnapshot) {
         ("OK", Color::Green)
     };
     let title = format!(
-        " Tennessee Eastman Process  \u{b7}  t = {:.2} s  \u{b7}  [{status_label}]  \u{b7}  [q] quit ",
+        " Tennessee Eastman Process  \u{b7}  t = {:.2} h  \u{b7}  [{status_label}]  \u{b7}  [q] quit ",
         snap.time
     );
     f.render_widget(

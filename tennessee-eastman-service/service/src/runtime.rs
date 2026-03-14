@@ -61,6 +61,8 @@ pub fn run(config: Config) {
     let mut t_simulation  = 0.0_f64;
     let mut t_operational = 0.0_f64;
     let mut isd_active    = false;
+    let mut last_state: Option<Vec<f64>> = None;
+    let mut clean_exit    = false;
 
     loop {
         if !isd_active {
@@ -117,8 +119,22 @@ pub fn run(config: Config) {
                 let _ = csv.flush();
             }
 
+            // ── Time limit ────────────────────────────────────────────────────
+            last_state = Some(snap.state.clone());
+            if let Some(max_t) = config.max_sim_time_h {
+                if t_simulation >= max_t {
+                    eprintln!("SIMULATION TIME LIMIT: {:.3} h reached", t_simulation);
+                    let _ = csv.flush();
+                    clean_exit = true;
+                    break;
+                }
+            }
+
             let running = dashboard.render(&snap).expect("Failed to render dashboard");
-            if !running { break; }
+            if !running {
+                clean_exit = true;
+                break;
+            }
         } else {
             let snap = plant.snapshot();
             let running = dashboard.render(&snap).expect("Failed to render dashboard");
@@ -135,4 +151,83 @@ pub fn run(config: Config) {
     }
 
     let _ = csv.flush();
+
+    // ── Snapshot on clean exit ─────────────────────────────────────────────────
+    if clean_exit {
+        if let (Some(ref path), Some(ref state)) = (&config.snapshot_path, &last_state) {
+            write_snapshot_toml(path, state, t_simulation);
+        }
+    }
+}
+
+fn write_snapshot_toml(path: &str, state: &[f64], t_h: f64) {
+    let file = File::create(path).expect("Failed to create snapshot file");
+    let mut w = BufWriter::new(file);
+
+    let comps = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    let valve_names = [
+        "d_feed", "e_feed", "a_feed", "a_c_feed",
+        "compressor_recycle_valve", "purge_valve",
+        "separator_underflow", "stripper_product", "stripper_steam_valve",
+        "reactor_cooling_water", "condenser_cooling_water", "agitator_speed",
+    ];
+
+    writeln!(w, "[meta]").unwrap();
+    writeln!(w, "mode = 1").unwrap();
+    writeln!(w, "description = \"TEP snapshot at t = {:.4} h\"", t_h).unwrap();
+    writeln!(w, "source = \"auto-snapshot from simulation\"").unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.reactor_vapor]").unwrap();
+    for (i, c) in comps.iter().enumerate() {
+        writeln!(w, "{} = {}", c, state[i]).unwrap();
+    }
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.reactor]").unwrap();
+    writeln!(w, "energy = {}", state[8]).unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.separator_vapor]").unwrap();
+    for (i, c) in comps.iter().enumerate() {
+        writeln!(w, "{} = {}", c, state[9 + i]).unwrap();
+    }
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.separator]").unwrap();
+    writeln!(w, "energy = {}", state[17]).unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.stripper_liquid]").unwrap();
+    for (i, c) in comps.iter().enumerate() {
+        writeln!(w, "{} = {}", c, state[18 + i]).unwrap();
+    }
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.stripper]").unwrap();
+    writeln!(w, "energy = {}", state[26]).unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.compressor_vapor]").unwrap();
+    for (i, c) in comps.iter().enumerate() {
+        writeln!(w, "{} = {}", c, state[27 + i]).unwrap();
+    }
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.compressor]").unwrap();
+    writeln!(w, "energy = {}", state[35]).unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.cooling]").unwrap();
+    writeln!(w, "reactor_water_temp   = {}", state[36]).unwrap();
+    writeln!(w, "separator_water_temp = {}", state[37]).unwrap();
+    writeln!(w).unwrap();
+
+    writeln!(w, "[state.valves]").unwrap();
+    for (i, name) in valve_names.iter().enumerate() {
+        writeln!(w, "{:<25} = {}", name, state[38 + i]).unwrap();
+    }
+
+    w.flush().unwrap();
+    eprintln!("Snapshot written → {}", path);
 }
