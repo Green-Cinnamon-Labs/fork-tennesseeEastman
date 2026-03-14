@@ -2,8 +2,9 @@
 Tennessee Eastman Process — simulation log plotter.
 
 Usage (from the analysis/ directory):
-    uv run python -m tep_analysis.plot
-    uv run python -m tep_analysis.plot --csv ../tennessee-eastman-service/simulation_log.csv
+    python -m tep_analysis.plot
+    python -m tep_analysis.plot --csv ../tennessee-eastman-service/simulation_log.csv
+    python -m tep_analysis.plot --csv simulation_log.csv --ramp 2.0
 """
 
 import argparse
@@ -29,8 +30,8 @@ ISD = {
 }
 
 # ── panel layout ──────────────────────────────────────────────────────────────
+# (title, ylabel, [(col, label, color), ...], y_limits_or_None)
 PANELS = [
-    # (title, ylabel, [(col, label, color), ...], y_limits_or_None)
     (
         "Reactor Pressure",
         "kPa",
@@ -59,26 +60,37 @@ PANELS = [
         (0, 100),
     ),
     (
-        "Recycle & Purge Flow",
-        "kscmh / kscmh",
+        "Feed Valve Ramp",
+        "%",
         [
-            ("XMEAS(5)",  "Recycle Flow", "#1abc9c"),
-            ("XMEAS(10)", "Purge Rate",   "#e74c3c"),
+            ("XMV(1)", "D Feed (XMV1)",   "#3498db"),
+            ("XMV(2)", "E Feed (XMV2)",   "#2ecc71"),
+            ("XMV(3)", "A Feed (XMV3)",   "#e74c3c"),
+            ("XMV(4)", "A&C Feed (XMV4)", "#f39c12"),
         ],
+        (0, 100),
+    ),
+    (
+        "Recycle Flow",
+        "kscmh",
+        [("XMEAS(5)", "Recycle Flow", "#1abc9c")],
         (None, None),
     ),
     (
-        "Purge Valve (MV)",
-        "%",
-        [("XMV(6)", "Purge Valve", "#e74c3c")],
-        (0, 100),
+        "Purge: Flow (kscmh) & Valve (%)",
+        "kscmh / %",
+        [
+            ("XMEAS(10)", "Purge Flow",    "#e74c3c"),
+            ("XMV(6)",    "Purge Valve %", "#c0392b"),
+        ],
+        (None, None),
     ),
     (
         "Sep & Stripper Underflow (MV)",
         "%",
         [
-            ("XMV(7)",  "Sep Underflow",      "#3498db"),
-            ("XMV(8)",  "Stripper Product",   "#2ecc71"),
+            ("XMV(7)", "Sep Underflow",    "#3498db"),
+            ("XMV(8)", "Stripper Product", "#2ecc71"),
         ],
         (0, 100),
     ),
@@ -102,7 +114,17 @@ def _add_thresholds(ax, col: str) -> None:
         ax.axhline(lo, color="#e05c5c", **kw, label=f"ISD <{lo}")
 
 
-def plot(csv_path: Path) -> None:
+def _add_ramp_markers(ax, ramp_h: float) -> None:
+    """Vertical dotted lines at 25 / 50 / 75 / 100 % of the cold-start ramp."""
+    for frac, label in [(0.25, "25%"), (0.5, "50%"), (0.75, "75%"), (1.0, "100%")]:
+        t = ramp_h * frac
+        ax.axvline(t, color="#888888", linestyle=":", linewidth=0.7, alpha=0.7)
+        ylo, yhi = ax.get_ylim()
+        ax.text(t, yhi, label, fontsize=5, color="#888888",
+                ha="center", va="bottom", clip_on=True)
+
+
+def plot(csv_path: Path, ramp_h: float | None = None) -> None:
     print(f"Loading {csv_path} …")
     df = pd.read_csv(csv_path)
     print(f"  {len(df)} rows  |  t = {df['t_h'].min():.4f} … {df['t_h'].max():.4f} h")
@@ -139,6 +161,9 @@ def plot(csv_path: Path) -> None:
             ax.legend(fontsize=7, loc="upper right")
         ax.grid(True, linewidth=0.4, alpha=0.5)
 
+        if ramp_h is not None:
+            _add_ramp_markers(ax, ramp_h)
+
     # hide any spare axes
     for idx in range(n_panels, len(flat_axes)):
         flat_axes[idx].set_visible(False)
@@ -161,13 +186,20 @@ def main() -> None:
         default=_DEFAULT_CSV,
         help=f"Path to simulation_log.csv (default: {_DEFAULT_CSV})",
     )
+    parser.add_argument(
+        "--ramp",
+        type=float,
+        default=None,
+        metavar="HOURS",
+        help="Cold-start ramp duration in simulated hours; draws phase markers at 25/50/75/100%%",
+    )
     args = parser.parse_args()
 
     if not args.csv.exists():
         print(f"ERROR: CSV not found: {args.csv}", file=sys.stderr)
         sys.exit(1)
 
-    plot(args.csv)
+    plot(args.csv, ramp_h=args.ramp)
 
 
 if __name__ == "__main__":
