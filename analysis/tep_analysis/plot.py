@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -100,6 +99,19 @@ PANELS = [
         [("deriv_norm", "deriv_norm", "#95a5a6")],
         (None, None),
     ),
+    # ── ODE state diagnostics (only present when YY columns are logged) ────────
+    (
+        "Reactor Vapor total  Σ UCVR  (YY[0–7])",
+        "kmol",
+        [("UCVR_total", "Σ UCVR", "#e05c5c")],
+        (None, None),
+    ),
+    (
+        "Compressor Vapor total  Σ UCVV  (YY[27–34])",
+        "kmol",
+        [("UCVV_total", "Σ UCVV", "#3498db")],
+        (None, None),
+    ),
 ]
 
 
@@ -128,6 +140,14 @@ def plot(csv_path: Path, ramp_h: float | None = None) -> None:
     print(f"Loading {csv_path} …")
     df = pd.read_csv(csv_path)
     print(f"  {len(df)} rows  |  t = {df['t_h'].min():.4f} … {df['t_h'].max():.4f} h")
+
+    # ── derived ODE state columns (present only when runtime logs YY) ─────────
+    yy_ucvr = [f"YY[{i}]" for i in range(8)]
+    yy_ucvv = [f"YY[{i}]" for i in range(27, 35)]
+    if all(c in df.columns for c in yy_ucvr):
+        df["UCVR_total"] = df[yy_ucvr].sum(axis=1)
+    if all(c in df.columns for c in yy_ucvv):
+        df["UCVV_total"] = df[yy_ucvv].sum(axis=1)
 
     t = df["t_h"]
     n_panels = len(PANELS)
