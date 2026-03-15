@@ -7,10 +7,11 @@ use te_core::plant::Plant;
 use te_core::params::Params;
 
 use crate::config::Config;
+use crate::controllers::ControllerBank;
 use crate::dashboard::Dashboard;
 use crate::resolver::resolve;
 
-pub fn run(config: Config) {
+pub fn run(config: Config, mut bank: ControllerBank) {
 
     let resolved = resolve(&config);
 
@@ -85,18 +86,8 @@ pub fn run(config: Config) {
                 disturbances_restored = true;
             }
 
-            // ── Stabilizing controllers — 3-loop baseline (Exp 10) ────────────
-            let reactor_p = plant.bus.outputs.xmeas[6];
-            plant.bus.inputs.mv[5] =
-                (40.06 + 0.10 * (reactor_p - 2705.0)).clamp(0.0, 100.0); // Kp=0.1
-
-            let sep_level = plant.bus.outputs.xmeas[11];
-            plant.bus.inputs.mv[6] =
-                (38.1 + 1.0 * (sep_level - 50.0)).clamp(0.0, 100.0);
-
-            let strip_level = plant.bus.outputs.xmeas[14];
-            plant.bus.inputs.mv[7] =
-                (46.5 + 1.0 * (strip_level - 50.0)).clamp(0.0, 100.0);
+            // ── Controllers (injected) ─────────────────────────────────────────
+            bank.step(&plant.bus.outputs.xmeas, &mut plant.bus.inputs.mv);
 
             let snap = plant.snapshot();
 
