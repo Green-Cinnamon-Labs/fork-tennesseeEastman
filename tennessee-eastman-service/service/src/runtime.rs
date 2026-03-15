@@ -85,10 +85,10 @@ pub fn run(config: Config) {
                 disturbances_restored = true;
             }
 
-            // ── Stabilizing controllers — 3-loop baseline ─────────────────────
+            // ── Stabilizing controllers — 3-loop baseline (Exp 10) ────────────
             let reactor_p = plant.bus.outputs.xmeas[6];
             plant.bus.inputs.mv[5] =
-                (40.06 + 1.00 * (reactor_p - 2705.0)).clamp(0.0, 100.0); // Kp 0.1→1.0 (Exp 12)
+                (40.06 + 0.10 * (reactor_p - 2705.0)).clamp(0.0, 100.0); // Kp=0.1
 
             let sep_level = plant.bus.outputs.xmeas[11];
             plant.bus.inputs.mv[6] =

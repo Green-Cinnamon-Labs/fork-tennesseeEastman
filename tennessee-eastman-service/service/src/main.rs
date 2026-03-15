@@ -17,9 +17,9 @@ fn main() {
         model: ModelKind::TennesseeEastman,
         integrator: IntegratorKind::RK4,
         ramp_duration: 0.0,
-        active_idv: vec![1],                                       // IDV(1): A/C feed ratio step
+        active_idv: vec![],                                        // baseline — no disturbances
         max_sim_time_h: Some(20.0),
-        snapshot_path: Some("cases/te_exp12_snapshot.toml".into()),
+        snapshot_path: Some("cases/te_exp11_snapshot.toml".into()),
     };
                                                              
     runtime::run(config);
