@@ -54,6 +54,9 @@ pub fn run(config: Config) {
     for i in 1..=22 { header.push_str(&format!(",XMEAS({})", i)); }
     for i in 1..=12 { header.push_str(&format!(",XMV({})", i)); }
     header.push_str(",deriv_norm");
+    // Internal ODE states: UCVR YY[0..10] (reactor vapor + energy) and UCVV YY[27..35] (compressor vapor + energy)
+    for i in 0..10  { header.push_str(&format!(",YY[{}]", i)); }
+    for i in 27..35 { header.push_str(&format!(",YY[{}]", i)); }
     writeln!(csv, "{}", header).unwrap();
 
     let mut dashboard = Dashboard::new().expect("Failed to initialize terminal dashboard");
@@ -102,6 +105,8 @@ pub fn run(config: Config) {
             for i in 0..22 { row.push_str(&format!(",{:.6}", snap.xmeas[i])); }
             for i in 0..12 { row.push_str(&format!(",{:.6}", snap.xmv[i])); }
             row.push_str(&format!(",{:.6e}", snap.solver.deriv_norm));
+            for i in 0..10  { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
+            for i in 27..35 { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
             writeln!(csv, "{}", row).unwrap();
 
             // Advance t_operational only while no alarms are active.
