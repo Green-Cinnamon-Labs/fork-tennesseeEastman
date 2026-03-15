@@ -112,6 +112,21 @@ PANELS = [
         [("UCVV_total", "Σ UCVV", "#3498db")],
         (None, None),
     ),
+    (
+        "UCVR components  A–H  (YY[0–7])",
+        "kmol",
+        [
+            ("YY[0]", "A", "#e74c3c"),
+            ("YY[1]", "B", "#e67e22"),
+            ("YY[2]", "C", "#f1c40f"),
+            ("YY[3]", "D", "#2ecc71"),
+            ("YY[4]", "E", "#1abc9c"),
+            ("YY[5]", "F", "#3498db"),
+            ("YY[6]", "G", "#9b59b6"),
+            ("YY[7]", "H", "#e91e63"),
+        ],
+        (None, None),
+    ),
 ]
 
 
