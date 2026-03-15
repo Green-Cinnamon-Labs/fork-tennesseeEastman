@@ -88,7 +88,7 @@ pub fn run(config: Config) {
             // ── Stabilizing controllers (always active) ────────────────────────
             let reactor_p = plant.bus.outputs.xmeas[6];
             plant.bus.inputs.mv[5] =
-                (40.06 + 0.10 * (reactor_p - 2705.0)).clamp(0.0, 100.0);
+                (40.06 + 0.10 * (reactor_p - 2680.0)).clamp(0.0, 100.0); // setpoint 2705→2680 (Exp 7)
 
             let sep_level = plant.bus.outputs.xmeas[11];
             plant.bus.inputs.mv[6] =

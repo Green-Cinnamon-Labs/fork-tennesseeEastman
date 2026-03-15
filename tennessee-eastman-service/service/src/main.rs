@@ -10,7 +10,7 @@ use config::{Config, ModelKind, IntegratorKind};
 fn main() {
 
     let config = Config {
-        dt: 0.001,                                                 // back to 0.001 (Exp 6)
+        dt: 0.001,
         real_time: false,
         step_delay_secs: 0.0,
         initial_state_path: "cases/te_exp3_snapshot.toml".into(),
@@ -19,7 +19,7 @@ fn main() {
         ramp_duration: 0.0,
         active_idv: vec![],
         max_sim_time_h: Some(5.0),
-        snapshot_path: Some("cases/te_exp6_snapshot.toml".into()),
+        snapshot_path: Some("cases/te_exp7_snapshot.toml".into()),
     };
                                                              
     runtime::run(config);
