@@ -19,7 +19,7 @@ fn main() {
         ramp_duration: 0.0,
         active_idv: vec![],
         max_sim_time_h: Some(5.0),
-        snapshot_path: Some("cases/te_exp7_snapshot.toml".into()),
+        snapshot_path: Some("cases/te_exp9_snapshot.toml".into()),
     };
                                                              
     runtime::run(config);

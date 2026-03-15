@@ -88,7 +88,7 @@ pub fn run(config: Config) {
             // ── Stabilizing controllers (always active) ────────────────────────
             let reactor_p = plant.bus.outputs.xmeas[6];
             plant.bus.inputs.mv[5] =
-                (40.06 + 0.10 * (reactor_p - 2680.0)).clamp(0.0, 100.0); // setpoint 2705→2680 (Exp 7)
+                (40.06 + 0.10 * (reactor_p - 2705.0)).clamp(0.0, 100.0); // setpoint reverted 2680→2705 (Exp 9)
 
             let sep_level = plant.bus.outputs.xmeas[11];
             plant.bus.inputs.mv[6] =
@@ -97,6 +97,13 @@ pub fn run(config: Config) {
             let strip_level = plant.bus.outputs.xmeas[14];
             plant.bus.inputs.mv[7] =
                 (46.5 + 1.0 * (strip_level - 50.0)).clamp(0.0, 100.0);
+
+            // ── 4th controller: reactor level → A feed (Exp 9) ────────────────
+            // More A feed → more reaction → more liquid product → level rises.
+            // Negative feedback: level high → reduce A feed.
+            let reactor_lv = plant.bus.outputs.xmeas[7];
+            plant.bus.inputs.mv[2] =
+                (nominal_mv[2] - 0.5 * (reactor_lv - 69.0)).clamp(0.0, 100.0);
 
             let snap = plant.snapshot();
 
