@@ -18,8 +18,8 @@ fn main() {
         integrator: IntegratorKind::RK4,
         ramp_duration: 0.0,
         active_idv: vec![],
-        max_sim_time_h: Some(5.0),
-        snapshot_path: Some("cases/te_exp9_snapshot.toml".into()),
+        max_sim_time_h: Some(20.0),
+        snapshot_path: Some("cases/te_exp10_snapshot.toml".into()),
     };
                                                              
     runtime::run(config);
