@@ -1,69 +1,61 @@
-# TEP Analysis Package
+# TEP Analysis — Pacote de Análise
 
-This folder contains the Python package `tep-analysis`.
+Pacote Python para visualização dos CSVs gerados pela simulação do Tennessee Eastman Digital Twin.
 
-## Why this package exists
+## Por que este pacote existe
 
-`tep-analysis` exists to provide a clean, reproducible way to analyze and visualize simulation outputs from the Tennessee Eastman service.
+- Separar lógica de plot e análise de dados do serviço de simulação em Rust
+- Fornecer um CLI (`plot`) para geração rápida de gráficos
+- Garantir isolamento de dependências via Poetry
 
-Main reasons:
-- Keep plotting and data analysis logic separate from the Rust simulation service.
-- Provide a Python CLI command (`plot`) for quick graph generation.
-- Ensure dependency isolation through Poetry, so everyone uses the same package versions.
+## Pré-requisitos
 
-## Prerequisites
-
-Run these commands from the `analysis/` directory.
-
-- Install dependencies:
+Execute a partir do diretório `analysis/`:
 
 ```bash
 poetry install
 ```
 
-- (Optional) confirm which virtual environment Poetry will use:
+(Opcional) verificar o ambiente virtual:
 
 ```bash
 poetry env info --path
 ```
 
-## Commands
+## Comandos
 
-### 1. Generate the plot (default CSV path)
+### 1. Gerar plot (CSV padrão)
 
 ```bash
 poetry run plot
 ```
 
-This uses the script entry point defined in `pyproject.toml`:
-- `plot = "tep_analysis.plot:main"`
+Usa o entry point definido em `pyproject.toml`: `plot = "tep_analysis.plot:main"`
 
-### 2. Generate the plot with an explicit CSV file
+### 2. Gerar plot com CSV específico
 
 ```bash
 poetry run plot --csv ../tennessee-eastman-service/simulation_log.csv
 ```
 
-### 3. Equivalent Python module command
+### 3. Comando equivalente via módulo Python
 
 ```bash
 poetry run python -m tep_analysis.plot
 ```
 
-## How to verify it is using the Poetry virtual environment
-
-Use:
+## Verificar ambiente virtual
 
 ```bash
 poetry run python -c "import sys; print(sys.executable)"
 ```
 
-The output Python path should point to Poetry's virtual environment (not a global system Python).
+O caminho deve apontar para o ambiente virtual do Poetry, não para o Python global.
 
-## Output
+## Saída
 
-The plot image is saved next to the CSV file, with `.png` extension.
+A imagem do plot é salva ao lado do CSV, com extensão `.png`.
 
-Example:
+Exemplo:
 - `../tennessee-eastman-service/simulation_log.csv`
 - `../tennessee-eastman-service/simulation_log.png`

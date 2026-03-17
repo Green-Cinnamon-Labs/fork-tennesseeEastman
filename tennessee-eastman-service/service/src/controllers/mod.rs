@@ -6,7 +6,7 @@ pub use p_controller::PController;
 /// A single control loop: reads XMEAS, writes XMV.
 ///
 /// The `step` call is made once per simulation tick, after `plant.step(dt)` and
-/// after the ramp logic — see `docs/1.md § Premissas para o Desacoplamento`.
+/// after the ramp logic — see `docs/01-premissas.md § Premissas para o Desacoplamento`.
 pub trait Controller: Send {
     fn step(&mut self, xmeas: &[f64], xmv: &mut [f64]);
 }
