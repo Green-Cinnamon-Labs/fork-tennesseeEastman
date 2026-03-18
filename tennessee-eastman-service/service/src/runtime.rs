@@ -7,11 +7,11 @@ use te_core::plant::Plant;
 use te_core::params::Params;
 
 use crate::config::Config;
-use crate::controllers::ControllerBank;
+use crate::shared::{SharedPlant, MetricsSnapshot, AlarmSnapshot};
 use crate::dashboard::Dashboard;
 use crate::resolver::resolve;
 
-pub fn run(config: Config, mut bank: ControllerBank) {
+pub fn run(config: Config, shared: SharedPlant) {
 
     let resolved = resolve(&config);
 
@@ -86,10 +86,43 @@ pub fn run(config: Config, mut bank: ControllerBank) {
                 disturbances_restored = true;
             }
 
-            // ── Controllers (injected) ─────────────────────────────────────────
-            bank.step(&plant.bus.outputs.xmeas, &mut plant.bus.inputs.mv);
+            // ── Shared state: read commands, run controllers, write metrics ───
+            {
+                let mut state = shared.lock().unwrap();
+
+                // Apply pending disturbance commands from gRPC
+                for cmd in state.pending_dv.drain(..) {
+                    if cmd.idv_number >= 1 && cmd.idv_number <= plant.bus.inputs.dv.len() {
+                        plant.bus.inputs.dv[cmd.idv_number - 1] = if cmd.active { 1.0 } else { 0.0 };
+                    }
+                }
+
+                // Controllers (injected)
+                state.bank.step(&plant.bus.outputs.xmeas, &mut plant.bus.inputs.mv);
+
+                // Write metrics snapshot for gRPC readers
+                state.metrics = MetricsSnapshot {
+                    t_h: t_simulation,
+                    xmeas: plant.bus.outputs.xmeas.to_vec(),
+                    xmv: plant.bus.inputs.mv.to_vec(),
+                    alarms: Vec::new(), // filled below after snap
+                    deriv_norm: 0.0,
+                    isd_active: false,
+                };
+            }
 
             let snap = plant.snapshot();
+
+            // Update alarm info in shared state
+            {
+                let mut state = shared.lock().unwrap();
+                state.metrics.deriv_norm = snap.solver.deriv_norm;
+                state.metrics.alarms = snap.alarms.iter().map(|a| AlarmSnapshot {
+                    variable: a.name.to_string(),
+                    condition: String::new(),
+                    active: a.active,
+                }).collect();
+            }
 
             // ── CSV row ────────────────────────────────────────────────────────
             let mut row = format!("{:.6}", t_simulation);
@@ -109,6 +142,11 @@ pub fn run(config: Config, mut bank: ControllerBank) {
             // Shutdown detection
             if snap.solver.deriv_norm == 0.0 && any_alarm {
                 isd_active = true;
+                // Update shared state
+                {
+                    let mut state = shared.lock().unwrap();
+                    state.metrics.isd_active = true;
+                }
                 eprintln!("SIMULATION STOPPED: plant shutdown condition reached");
                 eprintln!("  t_simulation  = {:.3} h", t_simulation);
                 eprintln!("  t_operational = {:.3} h", t_operational);

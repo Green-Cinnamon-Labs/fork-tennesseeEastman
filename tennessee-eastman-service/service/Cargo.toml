@@ -10,4 +10,11 @@ edition = "2021"
 te_core = { path = "../core" }
 ratatui   = "0.28"
 crossterm = "0.28"
+tonic     = "0.12"
+prost     = "0.13"
+tokio     = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
 
+[build-dependencies]
+tonic-build = "0.12"
+protoc-bin-vendored = "3"
