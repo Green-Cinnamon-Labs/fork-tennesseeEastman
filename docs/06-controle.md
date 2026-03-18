@@ -11,15 +11,27 @@ A camada de controle é separada do modelo da planta. O runtime não contém ló
 ### Arquitetura
 
 ```
-main.rs                          runtime.rs
+main.rs                          runtime.rs (sim thread)
 ┌──────────────────────┐         ┌──────────────────────────┐
 │ cria ControllerBank  │         │ loop {                   │
-│ adiciona controllers │───────► │   plant.step(dt)         │
-│ chama runtime::run() │         │   ramp_logic()           │
-│                      │         │   bank.step(xmeas, xmv)  │
-└──────────────────────┘         │ }                        │
-                                 └──────────────────────────┘
+│ adiciona controllers │         │   plant.step(dt)         │
+│ cria SharedState     │───────► │   ramp_logic()           │
+│ spawna sim thread    │         │   lock(shared) {         │
+│ inicia gRPC :50051   │         │     apply_dv_commands()  │
+└──────────────────────┘         │     bank.step(xmeas,xmv) │
+                                 │     write_metrics()      │
+       gRPC Server (tonic)       │   }                      │
+       ┌──────────────────┐      │ }                        │
+       │ StreamMetrics()  │◄────►└──────────────────────────┘
+       │ ListControllers()│        Arc<Mutex<SharedState>>
+       │ UpdateController()│
+       │ AddController()  │
+       │ RemoveController()│
+       │ SetDisturbance() │
+       └──────────────────┘
 ```
+
+Detalhes da API gRPC em [07-grpc-architecture.md](07-grpc-architecture.md).
 
 ### Trait Controller
 
@@ -29,13 +41,18 @@ Qualquer struct que implemente esta trait pode ser injetada na planta:
 // controllers/mod.rs
 pub trait Controller: Send {
     fn step(&mut self, xmeas: &[f64], xmv: &mut [f64]);
+    fn id(&self) -> &str;
+    fn info(&self) -> ControllerInfo;
+    fn update(&mut self, params: &ControllerParams);
 }
 ```
 
-- `xmeas` — vetor de 22 medições contínuas (leitura)
-- `xmv` — vetor de 12 variáveis manipuladas (escrita)
+- `step(xmeas, xmv)` — executa um passo de controle: lê medições, escreve manipuladas
+- `id()` — identificador único (ex: `"pressure_reactor"`)
+- `info()` — snapshot dos parâmetros atuais do controlador
+- `update(params)` — aplica alterações parciais de parâmetros em runtime (usado pelo gRPC)
 
-O controlador lê as medições que precisa, calcula a ação de controle e escreve diretamente na posição do XMV que controla.
+`xmeas` é o vetor de 22 medições contínuas (leitura). `xmv` é o vetor de 12 variáveis manipuladas (escrita).
 
 ### ControllerBank
 
@@ -47,11 +64,15 @@ pub struct ControllerBank {
 
 impl ControllerBank {
     pub fn add(&mut self, ctrl: Box<dyn Controller>);
+    pub fn remove(&mut self, id: &str) -> bool;
+    pub fn get(&self, id: &str) -> Option<&(dyn Controller + '_)>;
+    pub fn get_mut(&mut self, id: &str) -> Option<&mut Box<dyn Controller>>;
+    pub fn list(&self) -> Vec<ControllerInfo>;
     pub fn step(&mut self, xmeas: &[f64], xmv: &mut [f64]);
 }
 ```
 
-`step()` itera sobre todos os controladores na ordem de inserção. Cada um executa `step()` individualmente. Não há arbitragem — se dois controladores escrevem no mesmo XMV, o último vence.
+`step()` itera sobre todos os controladores na ordem de inserção. Cada um executa `step()` individualmente. Não há arbitragem — se dois controladores escrevem no mesmo XMV, o último vence. `get`/`get_mut`/`remove`/`list` permitem introspecção e modificação em runtime via gRPC.
 
 ### Como adicionar um novo controlador
 
@@ -60,24 +81,37 @@ impl ControllerBank {
 Basta adicionar uma linha em `main.rs`:
 
 ```rust
-bank.add(Box::new(PController {
-    xmeas_idx: 8,    // XMEAS(9) = Reactor Temperature
-    xmv_idx:   9,    // XMV(10) = Reactor Cooling Water
-    kp:        2.0,
-    setpoint:  120.4,
-    bias:      41.1,
-}));
+bank.add(Box::new(PController::new(
+    "temperature_reactor",  // id único
+    8,                      // XMEAS(9) = Reactor Temperature
+    9,                      // XMV(10) = Reactor Cooling Water
+    2.0,                    // kp
+    120.4,                  // setpoint
+    41.1,                   // bias
+)));
+```
+
+Ou via gRPC em runtime (sem reiniciar a planta):
+
+```bash
+grpcurl -plaintext -d '{
+  "id": "temperature_reactor",
+  "controller_type": "P",
+  "xmeas_index": 8, "xmv_index": 9,
+  "kp": 2.0, "setpoint": 120.4, "bias": 41.1
+}' localhost:50051 tep.v1.PlantService/AddController
 ```
 
 **2. Criar um novo tipo de controlador (PID, MPC, etc.):**
 
-Criar um arquivo em `controllers/`, implementar a trait `Controller`, e registrar no banco:
+Criar um arquivo em `controllers/`, implementar a trait `Controller` completa, e registrar no banco:
 
 ```rust
 // controllers/pid_controller.rs
-use super::Controller;
+use super::{Controller, ControllerInfo, ControllerParams};
 
 pub struct PidController {
+    pub id:        String,
     pub xmeas_idx: usize,
     pub xmv_idx:   usize,
     pub kp: f64,
@@ -85,12 +119,14 @@ pub struct PidController {
     pub kd: f64,
     pub setpoint: f64,
     pub bias: f64,
+    pub enabled: bool,
     integral: f64,
     prev_error: f64,
 }
 
 impl Controller for PidController {
     fn step(&mut self, xmeas: &[f64], xmv: &mut [f64]) {
+        if !self.enabled { return; }
         let error = xmeas[self.xmeas_idx] - self.setpoint;
         self.integral += error;
         let derivative = error - self.prev_error;
@@ -99,13 +135,28 @@ impl Controller for PidController {
                               + self.ki * self.integral
                               + self.kd * derivative).clamp(0.0, 100.0);
     }
+
+    fn id(&self) -> &str { &self.id }
+
+    fn info(&self) -> ControllerInfo {
+        ControllerInfo {
+            id: self.id.clone(),
+            controller_type: "PID".into(),
+            xmeas_idx: self.xmeas_idx, xmv_idx: self.xmv_idx,
+            kp: self.kp, ki: self.ki, kd: self.kd,
+            setpoint: self.setpoint, bias: self.bias, enabled: self.enabled,
+        }
+    }
+
+    fn update(&mut self, params: &ControllerParams) {
+        if let Some(kp) = params.kp { self.kp = kp; }
+        if let Some(ki) = params.ki { self.ki = ki; }
+        if let Some(kd) = params.kd { self.kd = kd; }
+        if let Some(sp) = params.setpoint { self.setpoint = sp; }
+        if let Some(b) = params.bias { self.bias = b; }
+        if let Some(en) = params.enabled { self.enabled = en; }
+    }
 }
-```
-
-Depois, em `main.rs`:
-
-```rust
-bank.add(Box::new(PidController { ... }));
 ```
 
 Nenhuma modificação em `runtime.rs` é necessária.

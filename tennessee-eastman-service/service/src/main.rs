@@ -28,7 +28,7 @@ async fn main() {
         integrator: IntegratorKind::RK4,
         ramp_duration: 0.0,
         active_idv: vec![],                                        // baseline — no disturbances
-        max_sim_time_h: Some(20.0),
+        max_sim_time_h: None,                                      // continuous operation
         snapshot_path: Some("cases/te_exp11_snapshot.toml".into()),
     };
 

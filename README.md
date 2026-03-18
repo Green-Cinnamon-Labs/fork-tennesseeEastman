@@ -23,14 +23,15 @@ docs/                         ← documentação técnica do projeto
 
 ## Documentação
 
-| Arquivo                                       | Conteúdo                                                                    |
-| --------------------------------------------- | --------------------------------------------------------------------------- |
-| [01-premissas.md](docs/01-premissas.md)       | Premissas de modelagem: válvulas, cold start, ordem do loop, desacoplamento |
-| [02-glossario.md](docs/02-glossario.md)       | Glossário de termos e nomenclatura do TEP                                   |
-| [03-falhas.md](docs/03-falhas.md)             | Relatório de falhas e troubleshooting da simulação                          |
-| [04-experimentos.md](docs/04-experimentos.md) | Registro científico de experimentos (Obs → Hip → Int → Res → Conc)          |
-| [05-disturbios.md](docs/05-disturbios.md)     | Referência dos 20 distúrbios IDV do TEP                                     |
-| [06-controle.md](docs/06-controle.md)         | Camada de controle: arquitetura injetável, malhas ativas, XMEAS/XMV         |
+| Arquivo                                                 | Conteúdo                                                                    |
+| ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [01-premissas.md](docs/01-premissas.md)                 | Premissas de modelagem: válvulas, cold start, ordem do loop, desacoplamento |
+| [02-glossario.md](docs/02-glossario.md)                 | Glossário de termos e nomenclatura do TEP                                   |
+| [03-falhas.md](docs/03-falhas.md)                       | Relatório de falhas e troubleshooting da simulação                          |
+| [04-experimentos.md](docs/04-experimentos.md)           | Registro científico de experimentos (Obs → Hip → Int → Res → Conc)          |
+| [05-disturbios.md](docs/05-disturbios.md)               | Referência dos 20 distúrbios IDV do TEP                                     |
+| [06-controle.md](docs/06-controle.md)                   | Camada de controle: arquitetura injetável, malhas ativas, XMEAS/XMV         |
+| [07-grpc-architecture.md](docs/07-grpc-architecture.md) | API gRPC para controle supervisório via Kubernetes                          |
 
 ## Análise e Visualização
 
@@ -48,6 +49,7 @@ poetry run plot --csv ../tennessee-eastman-service/simulation_log.csv
 - O **controle é injetável** via trait `Controller` + `ControllerBank`
 - O tempo avança de forma explícita via integração numérica (RK4)
 - Controladores são configuráveis sem modificar o runtime
+- Servidor gRPC (tonic, `:50051`) permite observação e reconciliação em runtime
 - Futuramente: gestão externa de controladores via Kubernetes CRDs
 
 ## Referências
@@ -56,4 +58,4 @@ poetry run plot --csv ../tennessee-eastman-service/simulation_log.csv
 
 ## Status
 
-Baseline estável (Exp 10/11, 20h sem ISD). Controladores desacoplados e injetáveis. Próximo milestone: testes de rejeição de distúrbio com a nova arquitetura.
+Baseline estável (Exp 10/11, 20h sem ISD). Controladores desacoplados e injetáveis. API gRPC live na `:50051` com StreamMetrics, List/Add/Update/RemoveController e SetDisturbance. Próximo milestone: integrar com Kubernetes operator (`cluster-api-provider-plc`).

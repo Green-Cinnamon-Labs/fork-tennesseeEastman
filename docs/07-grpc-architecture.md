@@ -66,16 +66,23 @@ A simulação roda em uma thread dedicada. O servidor gRPC roda em tarefas `toki
 
 ```rust
 pub struct SharedState {
-    pub bank: ControllerBank,          // controladores ativos
-    pub xmeas: [f64; 22],              // último snapshot de medições
-    pub xmv: [f64; 12],               // último snapshot de manipuladas
-    pub alarms: Vec<Alarm>,            // alarmes ativos
-    pub t_simulation: f64,             // tempo simulado (h)
-    pub active_idv: Vec<usize>,        // distúrbios ativos
+    pub bank: ControllerBank,          // controladores ativos (step + introspect + update)
+    pub metrics: MetricsSnapshot,      // último snapshot de métricas (t_h, xmeas, xmv, alarms, deriv_norm, isd)
+    pub active_idv: Vec<usize>,        // distúrbios ativos (tracking local)
+    pub pending_dv: Vec<DisturbanceCmd>, // comandos de distúrbio pendentes (gRPC → sim thread)
+}
+
+pub struct MetricsSnapshot {
+    pub t_h: f64,
+    pub xmeas: Vec<f64>,              // 22 medições
+    pub xmv: Vec<f64>,                // 12 manipuladas
+    pub alarms: Vec<AlarmSnapshot>,
+    pub deriv_norm: f64,
+    pub isd_active: bool,
 }
 ```
 
-O lock é adquirido **uma vez por tick** na thread de simulação — copia `xmeas`/`xmv` para o shared state e lê comandos pendentes. O custo do mutex é desprezível comparado ao custo de um `plant.step(dt)`.
+O lock é adquirido **uma vez por tick** na thread de simulação — aplica comandos de distúrbio pendentes, executa `bank.step()`, e escreve o snapshot de métricas. O custo do mutex é desprezível comparado ao custo de um `plant.step(dt)`.
 
 ---
 
