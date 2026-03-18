@@ -62,3 +62,6 @@ analysis/tep_analysis/.ipynb_checkpoints/
 
 **/target/
 **/Cargo.lock
+
+# Simulation artifacts
+tennessee-eastman-service/simulation_log.csv

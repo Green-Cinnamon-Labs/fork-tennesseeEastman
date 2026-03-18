@@ -1,0 +1,74 @@
+[meta]
+mode = 1
+description = "TEP snapshot at t = 35.1350 h"
+source = "auto-snapshot from simulation"
+
+[state.reactor_vapor]
+A = 10.477784445677933
+B = 4.453270757379651
+C = 7.592786492293585
+D = 0.4159800487885409
+E = 23.777982069104127
+F = 2.943678319907904
+G = 152.7889568518184
+H = 157.53124836869742
+
+[state.reactor]
+energy = 2.7789704280502265
+
+[state.separator_vapor]
+A = 63.63768688046964
+B = 27.047413059970417
+C = 46.11544172891055
+D = 0.24471034021538687
+E = 15.112653276072535
+F = 1.8709180682991933
+G = 52.46590857361808
+H = 41.225848235270135
+
+[state.separator]
+energy = 0.5702761028356463
+
+[state.stripper_liquid]
+A = 0.43104799292509455
+B = 0.007998828734692433
+C = 0.9065339232651366
+D = 0.01591884742218958
+E = 0.7451902255365475
+F = 0.08933915680609501
+G = 48.31281227510507
+H = 39.42363430782768
+
+[state.stripper]
+energy = 0.3761801725741344
+
+[state.compressor_vapor]
+A = 107.60222444418237
+B = 30.11029906619794
+C = 88.00406317827365
+D = 23.010668772995817
+E = 62.61046939094796
+F = 5.6071510590054165
+G = 11.947414381080963
+H = 5.568868895933575
+
+[state.compressor]
+energy = 0.9212244878837691
+
+[state.cooling]
+reactor_water_temp   = 94.59927549
+separator_water_temp = 77.29698353
+
+[state.valves]
+d_feed                    = 63.05263038999998
+e_feed                    = 53.979706769999986
+a_feed                    = 24.643557549999997
+a_c_feed                  = 61.30192143999999
+compressor_recycle_valve  = 22.21
+purge_valve               = 39.816414899230296
+separator_underflow       = 37.937082407901094
+stripper_product          = 46.28867018479233
+stripper_steam_valve      = 47.44573456
+reactor_cooling_water     = 41.10581288
+condenser_cooling_water   = 18.11349055
+agitator_speed            = 50
