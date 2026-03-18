@@ -26,4 +26,7 @@ pub struct Config {
     /// If set, write the final plant state as a TOML snapshot to this path when the
     /// simulation exits cleanly (time limit or user quit, not ISD shutdown).
     pub snapshot_path: Option<String>,
+    /// Headless mode: no TUI dashboard, no CSV. Only gRPC + simulation.
+    /// Intended for containerized operation (Docker/K8s).
+    pub headless: bool,
 }

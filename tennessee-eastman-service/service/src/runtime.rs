@@ -46,21 +46,31 @@ pub fn run(config: Config, shared: SharedPlant) {
 
     let mut disturbances_restored = false;
 
-    // ── CSV logger ─────────────────────────────────────────────────────────────
-    let csv_file = File::create("simulation_log.csv").expect("Failed to create CSV file");
-    let mut csv = BufWriter::new(csv_file);
+    // ── CSV logger (disabled in headless mode) ───────────────────────────────
+    let mut csv: Option<BufWriter<File>> = if !config.headless {
+        let csv_file = File::create("simulation_log.csv").expect("Failed to create CSV file");
+        let mut w = BufWriter::new(csv_file);
 
-    // Header
-    let mut header = String::from("t_h");
-    for i in 1..=22 { header.push_str(&format!(",XMEAS({})", i)); }
-    for i in 1..=12 { header.push_str(&format!(",XMV({})", i)); }
-    header.push_str(",deriv_norm");
-    // Internal ODE states: UCVR YY[0..10] (reactor vapor + energy) and UCVV YY[27..35] (compressor vapor + energy)
-    for i in 0..10  { header.push_str(&format!(",YY[{}]", i)); }
-    for i in 27..35 { header.push_str(&format!(",YY[{}]", i)); }
-    writeln!(csv, "{}", header).unwrap();
+        let mut header = String::from("t_h");
+        for i in 1..=22 { header.push_str(&format!(",XMEAS({})", i)); }
+        for i in 1..=12 { header.push_str(&format!(",XMV({})", i)); }
+        header.push_str(",deriv_norm");
+        for i in 0..10  { header.push_str(&format!(",YY[{}]", i)); }
+        for i in 27..35 { header.push_str(&format!(",YY[{}]", i)); }
+        writeln!(w, "{}", header).unwrap();
 
-    let mut dashboard = Dashboard::new().expect("Failed to initialize terminal dashboard");
+        Some(w)
+    } else {
+        None
+    };
+
+    // ── Dashboard (disabled in headless mode) ────────────────────────────────
+    let mut dashboard: Option<Dashboard> = if !config.headless {
+        Some(Dashboard::new().expect("Failed to initialize terminal dashboard"))
+    } else {
+        eprintln!("Headless mode: no TUI, no CSV. gRPC only.");
+        None
+    };
 
     let mut t_simulation  = 0.0_f64;
     let mut t_operational = 0.0_f64;
@@ -124,14 +134,16 @@ pub fn run(config: Config, shared: SharedPlant) {
                 }).collect();
             }
 
-            // ── CSV row ────────────────────────────────────────────────────────
-            let mut row = format!("{:.6}", t_simulation);
-            for i in 0..22 { row.push_str(&format!(",{:.6}", snap.xmeas[i])); }
-            for i in 0..12 { row.push_str(&format!(",{:.6}", snap.xmv[i])); }
-            row.push_str(&format!(",{:.6e}", snap.solver.deriv_norm));
-            for i in 0..10  { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
-            for i in 27..35 { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
-            writeln!(csv, "{}", row).unwrap();
+            // ── CSV row ──────────────────────────────────────────────────────
+            if let Some(ref mut w) = csv {
+                let mut row = format!("{:.6}", t_simulation);
+                for i in 0..22 { row.push_str(&format!(",{:.6}", snap.xmeas[i])); }
+                for i in 0..12 { row.push_str(&format!(",{:.6}", snap.xmv[i])); }
+                row.push_str(&format!(",{:.6e}", snap.solver.deriv_norm));
+                for i in 0..10  { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
+                for i in 27..35 { row.push_str(&format!(",{:.6e}", snap.state.get(i).copied().unwrap_or(f64::NAN))); }
+                writeln!(w, "{}", row).unwrap();
+            }
 
             // Advance t_operational only while no alarms are active.
             let any_alarm = snap.alarms.iter().any(|a| a.active);
@@ -142,7 +154,6 @@ pub fn run(config: Config, shared: SharedPlant) {
             // Shutdown detection
             if snap.solver.deriv_norm == 0.0 && any_alarm {
                 isd_active = true;
-                // Update shared state
                 {
                     let mut state = shared.lock().unwrap();
                     state.metrics.isd_active = true;
@@ -150,7 +161,7 @@ pub fn run(config: Config, shared: SharedPlant) {
                 eprintln!("SIMULATION STOPPED: plant shutdown condition reached");
                 eprintln!("  t_simulation  = {:.3} h", t_simulation);
                 eprintln!("  t_operational = {:.3} h", t_operational);
-                let _ = csv.flush();
+                if let Some(ref mut w) = csv { let _ = w.flush(); }
             }
 
             // ── Time limit ────────────────────────────────────────────────────
@@ -158,21 +169,30 @@ pub fn run(config: Config, shared: SharedPlant) {
             if let Some(max_t) = config.max_sim_time_h {
                 if t_simulation >= max_t {
                     eprintln!("SIMULATION TIME LIMIT: {:.3} h reached", t_simulation);
-                    let _ = csv.flush();
+                    if let Some(ref mut w) = csv { let _ = w.flush(); }
                     clean_exit = true;
                     break;
                 }
             }
 
-            let running = dashboard.render(&snap).expect("Failed to render dashboard");
-            if !running {
-                clean_exit = true;
-                break;
+            // ── Dashboard render ──────────────────────────────────────────────
+            if let Some(ref mut d) = dashboard {
+                let running = d.render(&snap).expect("Failed to render dashboard");
+                if !running {
+                    clean_exit = true;
+                    break;
+                }
             }
         } else {
-            let snap = plant.snapshot();
-            let running = dashboard.render(&snap).expect("Failed to render dashboard");
-            if !running { break; }
+            // ISD active — in headless mode just sleep, in TUI mode render
+            if let Some(ref mut d) = dashboard {
+                let snap = plant.snapshot();
+                let running = d.render(&snap).expect("Failed to render dashboard");
+                if !running { break; }
+            } else {
+                // Headless: sleep briefly to avoid busy-wait, gRPC still serves metrics
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
 
             if config.real_time {
                 std::thread::sleep(std::time::Duration::from_secs_f64(config.step_delay_secs));
@@ -184,7 +204,7 @@ pub fn run(config: Config, shared: SharedPlant) {
         }
     }
 
-    let _ = csv.flush();
+    if let Some(ref mut w) = csv { let _ = w.flush(); }
 
     // ── Snapshot on clean exit ─────────────────────────────────────────────────
     if clean_exit {

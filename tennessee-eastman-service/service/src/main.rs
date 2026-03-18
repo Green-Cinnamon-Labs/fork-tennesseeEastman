@@ -19,6 +19,8 @@ use grpc_server::pb::plant_service_server::PlantServiceServer;
 #[tokio::main]
 async fn main() {
 
+    let headless = std::env::args().any(|a| a == "--headless");
+
     let config = Config {
         dt: 0.001,
         real_time: false,
@@ -30,6 +32,7 @@ async fn main() {
         active_idv: vec![],                                        // baseline — no disturbances
         max_sim_time_h: None,                                      // continuous operation
         snapshot_path: Some("cases/te_exp11_snapshot.toml".into()),
+        headless,
     };
 
     // ── Controllers: 3-loop baseline — parameters identical to Exp 10 ─────────
