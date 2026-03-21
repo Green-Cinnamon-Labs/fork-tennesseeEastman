@@ -96,16 +96,9 @@ pub fn run(config: Config, shared: SharedPlant) {
                 disturbances_restored = true;
             }
 
-            // ── Shared state: read commands, run controllers, write metrics ───
+            // ── Shared state: run controllers, write metrics ─────────────────
             {
                 let mut state = shared.lock().unwrap();
-
-                // Apply pending disturbance commands from gRPC
-                for cmd in state.pending_dv.drain(..) {
-                    if cmd.idv_number >= 1 && cmd.idv_number <= plant.bus.inputs.dv.len() {
-                        plant.bus.inputs.dv[cmd.idv_number - 1] = if cmd.active { 1.0 } else { 0.0 };
-                    }
-                }
 
                 // Controllers (injected)
                 state.bank.step(&plant.bus.outputs.xmeas, &mut plant.bus.inputs.mv);

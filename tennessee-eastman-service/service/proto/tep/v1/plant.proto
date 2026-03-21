@@ -2,6 +2,10 @@ syntax = "proto3";
 package tep.v1;
 
 // ─── Serviço principal ─────────────────────────────────────────────────────────
+// A planta expõe apenas RPCs de LEITURA + ajuste de parâmetros.
+// Não permite criar/remover controladores nem controlar distúrbios.
+// Controladores são definidos no código Rust (main.rs).
+// Distúrbios são aleatórios — o operator reage aos efeitos, não causa.
 
 service PlantService {
   // Observação: stream contínuo de métricas da planta
@@ -15,15 +19,6 @@ service PlantService {
 
   // Escrita: atualiza parâmetros de um controlador existente
   rpc UpdateController(UpdateControllerRequest) returns (UpdateControllerResponse);
-
-  // Escrita: adiciona novo controlador ao banco
-  rpc AddController(AddControllerRequest) returns (AddControllerResponse);
-
-  // Escrita: remove controlador do banco
-  rpc RemoveController(RemoveControllerRequest) returns (RemoveControllerResponse);
-
-  // Escrita: ativa/desativa distúrbios IDV
-  rpc SetDisturbance(SetDisturbanceRequest) returns (SetDisturbanceResponse);
 }
 
 // ─── Métricas e status ─────────────────────────────────────────────────────────
@@ -94,44 +89,4 @@ message UpdateControllerResponse {
   bool success = 1;
   string message = 2;
   ControllerInfo controller = 3;
-}
-
-message AddControllerRequest {
-  string id = 1;
-  string controller_type = 2;
-  uint32 xmeas_index = 3;
-  uint32 xmv_index = 4;
-  double kp = 5;
-  double ki = 6;
-  double kd = 7;
-  double setpoint = 8;
-  double bias = 9;
-}
-
-message AddControllerResponse {
-  bool success = 1;
-  string message = 2;
-  ControllerInfo controller = 3;
-}
-
-message RemoveControllerRequest {
-  string id = 1;
-}
-
-message RemoveControllerResponse {
-  bool success = 1;
-  string message = 2;
-}
-
-// ─── Distúrbios ────────────────────────────────────────────────────────────────
-
-message SetDisturbanceRequest {
-  uint32 idv_number = 1;           // 1–20
-  bool active = 2;
-}
-
-message SetDisturbanceResponse {
-  bool success = 1;
-  string message = 2;
-  repeated uint32 active_idv = 3;
 }

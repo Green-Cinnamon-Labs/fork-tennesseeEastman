@@ -21,18 +21,11 @@ pub struct AlarmSnapshot {
     pub active: bool,
 }
 
-/// Pending disturbance command from gRPC → simulation thread.
-pub struct DisturbanceCmd {
-    pub idv_number: usize,  // 1-based
-    pub active: bool,
-}
-
 /// Shared state protected by a mutex.
 pub struct SharedState {
     pub bank: ControllerBank,
     pub metrics: MetricsSnapshot,
     pub active_idv: Vec<usize>,
-    pub pending_dv: Vec<DisturbanceCmd>,
 }
 
 impl SharedState {
@@ -48,7 +41,6 @@ impl SharedState {
                 isd_active: false,
             },
             active_idv: Vec::new(),
-            pending_dv: Vec::new(),
         }
     }
 }

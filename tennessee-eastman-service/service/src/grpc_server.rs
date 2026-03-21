@@ -1,12 +1,15 @@
 // grpc_server.rs — gRPC service implementation
+//
+// Expõe apenas: StreamMetrics, GetPlantStatus, ListControllers, UpdateController.
+// Não permite criar/remover controladores nem controlar distúrbios.
 
 use std::time::Duration;
 use tonic::{Request, Response, Status};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 
-use crate::shared::{SharedPlant, AlarmSnapshot, DisturbanceCmd};
-use crate::controllers::{ControllerParams, PController};
+use crate::shared::{SharedPlant, AlarmSnapshot};
+use crate::controllers::ControllerParams;
 
 pub mod pb {
     tonic::include_proto!("tep.v1");
@@ -175,110 +178,6 @@ impl PlantService for PlantServiceImpl {
             success: true,
             message: format!("controller '{}' updated", req.id),
             controller: Some(pb_info),
-        }))
-    }
-
-    async fn add_controller(
-        &self,
-        request: Request<AddControllerRequest>,
-    ) -> Result<Response<AddControllerResponse>, Status> {
-        let req = request.into_inner();
-        let mut state = self.shared.lock().unwrap();
-
-        // Check for duplicate id
-        if state.bank.get(&req.id).is_some() {
-            return Ok(Response::new(AddControllerResponse {
-                success: false,
-                message: format!("controller '{}' already exists", req.id),
-                controller: None,
-            }));
-        }
-
-        // Validate indices
-        if req.xmeas_index >= 22 || req.xmv_index >= 12 {
-            return Ok(Response::new(AddControllerResponse {
-                success: false,
-                message: "xmeas_index must be < 22, xmv_index must be < 12".into(),
-                controller: None,
-            }));
-        }
-
-        let ctrl = PController::new(
-            req.id.clone(),
-            req.xmeas_index as usize,
-            req.xmv_index as usize,
-            req.kp,
-            req.setpoint,
-            req.bias,
-        );
-        state.bank.add(Box::new(ctrl));
-
-        let info = state.bank.get(&req.id).unwrap().info();
-        let xmeas = &state.metrics.xmeas;
-        let xmv = &state.metrics.xmv;
-
-        Ok(Response::new(AddControllerResponse {
-            success: true,
-            message: format!("controller '{}' added", req.id),
-            controller: Some(info_to_pb(&info, xmeas, xmv)),
-        }))
-    }
-
-    async fn remove_controller(
-        &self,
-        request: Request<RemoveControllerRequest>,
-    ) -> Result<Response<RemoveControllerResponse>, Status> {
-        let req = request.into_inner();
-        let mut state = self.shared.lock().unwrap();
-
-        let removed = state.bank.remove(&req.id);
-
-        Ok(Response::new(RemoveControllerResponse {
-            success: removed,
-            message: if removed {
-                format!("controller '{}' removed", req.id)
-            } else {
-                format!("controller '{}' not found", req.id)
-            },
-        }))
-    }
-
-    async fn set_disturbance(
-        &self,
-        request: Request<SetDisturbanceRequest>,
-    ) -> Result<Response<SetDisturbanceResponse>, Status> {
-        let req = request.into_inner();
-
-        if req.idv_number < 1 || req.idv_number > 20 {
-            return Ok(Response::new(SetDisturbanceResponse {
-                success: false,
-                message: "idv_number must be 1–20".into(),
-                active_idv: Vec::new(),
-            }));
-        }
-
-        let mut state = self.shared.lock().unwrap();
-
-        // Queue the command for the simulation thread
-        state.pending_dv.push(DisturbanceCmd {
-            idv_number: req.idv_number as usize,
-            active: req.active,
-        });
-
-        // Update the local tracking list
-        let idv = req.idv_number as usize;
-        if req.active {
-            if !state.active_idv.contains(&idv) {
-                state.active_idv.push(idv);
-            }
-        } else {
-            state.active_idv.retain(|&v| v != idv);
-        }
-
-        Ok(Response::new(SetDisturbanceResponse {
-            success: true,
-            message: format!("IDV({}) {}", req.idv_number, if req.active { "activated" } else { "deactivated" }),
-            active_idv: state.active_idv.iter().map(|&v| v as u32).collect(),
         }))
     }
 }
