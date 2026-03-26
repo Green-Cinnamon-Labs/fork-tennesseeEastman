@@ -1,3 +1,6 @@
+# docker build -t te-plant:latest .
+# docker run --rm -p 50051:50051 te-plant:latest
+#
 # ── Stage 1: build ────────────────────────────────────────────────────────────
 # rust:latest hoje (2026-03) roda em cima de Debian Trixie.
 # Isso importa porque o binario compilado aqui vai linkar contra a glibc do Trixie.
