@@ -58,4 +58,4 @@ poetry run plot --csv ../tennessee-eastman-service/simulation_log.csv
 
 ## Status
 
-Baseline estável (Exp 10/11, 20h sem ISD). Controladores desacoplados e injetáveis. API gRPC live na `:50051` com StreamMetrics, List/Add/Update/RemoveController e SetDisturbance. Próximo milestone: integrar com Kubernetes operator (`cluster-api-provider-plc`).
+Baseline estável (Exp 10/11, 20h sem ISD). Controladores desacoplados e injetáveis. API gRPC live na `:50051` com StreamMetrics, List/Add/Update/RemoveController e SetDisturbance. Próximo milestone: integrar com Kubernetes operator (`tep-operator`).
