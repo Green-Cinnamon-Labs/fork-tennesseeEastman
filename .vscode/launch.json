@@ -2,14 +2,46 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Rust",
+      "name": "Planta: baseline (100x, sem distúrbios)",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/tennessee-eastman-service/service/target/debug/te_service",
+      "program": "${workspaceFolder}/tennessee-eastman-service/target/debug/te_service.exe",
+      "args": ["--headless"],
       "cwd": "${workspaceFolder}/tennessee-eastman-service",
       "preLaunchTask": "cargo build",
       "sourceLanguages": ["rust"],
-      "evaluateForHovers": false
+            "env": {
+        "STEP_DELAY_MS": "36",
+        "ACTIVE_IDV": ""
+      }
+    },
+    {
+      "name": "Planta: distúrbio IDV(4) (100x)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/tennessee-eastman-service/target/debug/te_service.exe",
+      "args": ["--headless"],
+      "cwd": "${workspaceFolder}/tennessee-eastman-service",
+      "preLaunchTask": "cargo build",
+      "sourceLanguages": ["rust"],
+            "env": {
+        "STEP_DELAY_MS": "36",
+        "ACTIVE_IDV": "4"
+      }
+    },
+    {
+      "name": "Planta: velocidade máxima (sem delay)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/tennessee-eastman-service/target/debug/te_service.exe",
+      "args": ["--headless"],
+      "cwd": "${workspaceFolder}/tennessee-eastman-service",
+      "preLaunchTask": "cargo build",
+      "sourceLanguages": ["rust"],
+            "env": {
+        "STEP_DELAY_MS": "0",
+        "ACTIVE_IDV": ""
+      }
     }
   ]
 }
