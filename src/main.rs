@@ -17,6 +17,12 @@ pra thread do adapter: a ponte é um canal `(nome, valor)`, drenado a cada tick 
 — ver `Simulation::spawn_adapter_thread`/`spawn_plant_thread` (`monjolo::simulation`). Sem a
 feature, este binário integra a planta no tempo sem expor nada pra fora, como antes.
 
+NOTA (2026-09-06): `simulation.runtime_control()` precisa ser chamado ANTES de `set_adapter`/`run()`
+— é o mesmo `Arc<RuntimeControl>` que acompanha a Thread da planta por dentro (pausa/velocidade/
+`t_h`) e que o adaptador OPC-UA expõe como `clock.t_h` (node) e `control.pause`/`control.resume`/
+`control.set_speed` (Method) — ver `monjolo::runtime_control`. `reset` ainda não tem Method (ver nota
+em `runtime_control.rs`).
+
 Roda com: cargo run --bin tep-plant [--features opcua]
 */
 
@@ -57,6 +63,7 @@ fn main() {
     #[cfg(feature = "opcua")]
     simulation.set_adapter(monjolo::adapter::AdapterConfig::OpcUa {
         endpoint: OPCUA_ENDPOINT.to_string(),
+        control: simulation.runtime_control(),
     });
 
     simulation.run().expect("run encerrou com erro");
