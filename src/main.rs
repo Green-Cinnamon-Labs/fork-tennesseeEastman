@@ -11,17 +11,17 @@ inicial (`set_config_path`) — "de onde vem o arquivo é problema da aplicaçã
 framework" continua valendo, só que agora é o único trabalho que sobra aqui.
 
 NOTA (2026-08-15): adaptador OPC-UA ligado sob a feature `opcua` (default OFF) — expõe os
-Sensors/Actuators já catalogados em StateRegistry (`sensor_names()`/`actuator_names()`,
-`monjolo::state_registry`) via `monjolo::adapter::opcua`. Escrita de atuador não atravessa o `Rc`
-pra thread do adapter: a ponte é um canal `(nome, valor)`, drenado a cada tick pela Thread da planta
-— ver `Simulation::spawn_adapter_thread`/`spawn_plant_thread` (`monjolo::simulation`). Sem a
-feature, este binário integra a planta no tempo sem expor nada pra fora, como antes.
+Sensors/Actuators já catalogados em StateRegistry via `monjolo::adapter::opcua`. Sem a feature, este
+binário integra a planta no tempo sem expor nada pra fora, como antes.
 
-NOTA (2026-09-06): `simulation.runtime_control()` precisa ser chamado ANTES de `set_adapter`/`run()`
-— é o mesmo `Arc<RuntimeControl>` que acompanha a Thread da planta por dentro (pausa/velocidade/
-`t_h`) e que o adaptador OPC-UA expõe como `clock.t_h` (node) e `control.pause`/`control.resume`/
-`control.set_speed` (Method) — ver `monjolo::runtime_control`. `reset` ainda não tem Method (ver nota
-em `runtime_control.rs`).
+NOTA (2026-09-09, issue #67): `Simulation` deixou de gerenciar o adaptador de rede — quem faz isso
+agora é `monjolo::runtime::Runtime`, um supervisor persistente que sobrevive a qualquer número de
+`reset()`s da simulação, trocando atomicamente pra qual instância de planta o adaptador aponta (o
+servidor OPC-UA, uma vez subido, nunca mais cai). Este binário não chama mais `Simulation::run()`
+direto — em vez disso, dá a `Runtime::new()` uma fábrica (`Fn() -> Simulation`, chamada de novo a
+cada reset) e bloqueia em `Runtime::wait_for_shutdown()`, que só retorna quando `control.shutdown`
+for chamado via OPC-UA. Desenho completo em
+`spec-tennessee-eastman/docs/issue61_runtime_supervisor/nota_runtime_supervisor.md`.
 
 Roda com: cargo run --bin tep-plant [--features opcua]
 */
@@ -55,16 +55,27 @@ os dois com essa constante sozinha hoje.
 const OPCUA_ENDPOINT: &str = "opc.tcp://127.0.0.1:4840/tep/server/";
 
 fn main() {
-    let mut simulation = Simulation::new();
+    let runtime = monjolo::runtime::Runtime::new(|| {
+        let mut simulation = Simulation::new();
+        simulation.set_config_path(CONFIG_PATH);
+        simulation.set_numerical_method(NumericalMethod::RK4);
+        simulation
+    })
+    .expect("Runtime::new encerrou com erro");
 
-    simulation.set_config_path(CONFIG_PATH);
-    simulation.set_numerical_method(NumericalMethod::RK4);
-
+    let _ = &runtime; // só usado dentro dos blocos #[cfg(feature = "opcua")] abaixo
     #[cfg(feature = "opcua")]
-    simulation.set_adapter(monjolo::adapter::AdapterConfig::OpcUa {
-        endpoint: OPCUA_ENDPOINT.to_string(),
-        control: simulation.runtime_control(),
-    });
+    runtime.spawn_opcua_adapter(OPCUA_ENDPOINT);
 
-    simulation.run().expect("run encerrou com erro");
+    /* Sem a feature `opcua`, não há nenhum jeito de pedir shutdown de fora — este binário não tem
+    mais nada a fazer além de manter a planta rodando indefinidamente. `park()` em loop em vez de
+    `wait_for_shutdown()` evita bloquear pra sempre numa Condvar que, sem adapter, nunca ninguém vai
+    notificar.
+    */
+    #[cfg(feature = "opcua")]
+    runtime.wait_for_shutdown();
+    #[cfg(not(feature = "opcua"))]
+    loop {
+        std::thread::park();
+    }
 }
